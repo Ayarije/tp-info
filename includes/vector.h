@@ -19,6 +19,28 @@ Vector* InitVector() {
     return v;
 }
 
+Vector* InitVectorWithValue(int size, int value) {
+    Vector* v = malloc(sizeof(Vector));
+    if (!v) { return NULL; }
+    v->lenght = size;
+    v->array = malloc(sizeof(int)*v->lenght);
+
+    for (int i = 0; i < v->lenght; i++) { v->array[i] = value; }
+
+    return v;
+}
+
+Vector* CopyVector(Vector* v) {
+    Vector* new_v = malloc(sizeof(Vector));
+    if (!v) { return NULL; }
+    new_v->lenght = v->lenght;
+    new_v->array = malloc(sizeof(int)*new_v->lenght);
+
+    for (int i = 0; i < v->lenght; i++) { new_v->array[i] = v->array[i]; }
+
+    return new_v;
+}
+
 void DestroyVector(Vector* v) {
     free(v->array);
     free(v);
@@ -30,9 +52,14 @@ void swap(int* xp, int* yp){
     *yp = temp;
 }
 
-int v_get(Vector* v, int i) {
-    if (i < 0 || i >= v->lenght) { return 0; }
-    return v->array[i];
+int* v_get(Vector* v, int i) {
+    if (i < 0 || i >= v->lenght) { return NULL; }
+    return &v->array[i];
+}
+
+void v_set(Vector* v, int i, int value) {
+    if (i < 0 || i >= v->lenght) { return; }
+    v->array[i] = value;
 }
 
 void v_append(Vector* v, int value) {
@@ -100,10 +127,10 @@ void v_delete(Vector* v, int index) {
 void v_print(Vector* v) {
 
     printf("[");
-    for (int i = 0; i < v->lenght; i++) {
+    for (int i = 0; i < v->lenght - 1; i++) {
         printf("%d ", v->array[i]);
     }
-    printf("]\n");
+    printf("%d]\n", v->array[v->lenght - 1]);
 
 }
 
@@ -162,6 +189,16 @@ int v_index(Vector* v, int value) {
         }
     }
     return -1;
+}
+
+int v_count(Vector* v, int value) {
+    int count = 0;
+
+    for (int i = 0; i < v->lenght; i++) {
+        if (v->array[i] == value) { count++; }
+    }
+
+    return count;
 }
 
 #endif
