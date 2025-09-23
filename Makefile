@@ -15,12 +15,17 @@ SOURCES := $(patsubst ./%,%,$(SOURCES))
 # for each src like dir/file.c produce dir/build/file.exe
 EXES := $(foreach s,$(SOURCES),$(dir $(s))build/$(notdir $(s:.c=.exe)))
 
+# find all header file in includes/file.h
+HEADERS := $(wildcard includes/*.h)
+
 # unique list of build directories (without trailing slash)
 BUILD_DIRS := $(sort $(patsubst %/,%,$(dir $(EXES))))
 
 .PHONY: all clean list
 
 all: $(EXES)
+
+$(EXES): $(HEADERS)
 
 # create build dirs (one rule per dir)
 $(foreach d,$(BUILD_DIRS),$(eval $(d): ; mkdir -p $(d)))

@@ -125,8 +125,9 @@ void v_delete(Vector* v, int index) {
 }
 
 void v_print(Vector* v) {
-
-    printf("[");
+    printf("----[ %p(%p) ]----\n", v, v->array);
+    printf("Vector lenght : %d\n", v->lenght);
+    printf("array : [");
     for (int i = 0; i < v->lenght - 1; i++) {
         printf("%d ", v->array[i]);
     }
@@ -273,14 +274,12 @@ void v2d_set_line(Vector2d* v, int y, int* line, int line_size) {
 Vector* v2d_get_line(Vector2d* v, int y) {
     Vector* line = InitVector();
 
-    // if (y < 0 || y >= v->shape[1]) { return line; }
+    if (y < 0 || y >= v->shape[1]) { return line; }
 
-    for (int i = y * v->shape[0]; i < v->shape[0]; i++) {
-        printf("adding %d at index %d to the new vector\n", v->array[i], i);
+    for (int i = y * v->shape[0]; i < y * v->shape[0] + v->shape[0]; i++) {
         v_append(line, v->array[i]);
     }
 
-    v_print(line);
     return line;
 }
 

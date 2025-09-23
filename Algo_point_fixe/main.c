@@ -24,31 +24,34 @@ Vector* add_lines(Vector* l1, Vector* l2) {
 
 
 void point_fixe(Vector2d* input) {
-    Vector* pivot = v2d_get_line(input, 0);
+    Vector* pivot;
     Vector* current_line;
     Vector* result_line;
     int x_pivot;
     int x_used;
 
-    for (int y = 1; y < input->shape[1]; y++) {
-        current_line = v2d_get_line(input, y);
-        printf("%d | %d\n", y, current_line->lenght);
+    for (int p = 0; p < input->shape[1] - 1; p++) {
+        pivot = v2d_get_line(input, p);
 
-        x_pivot = *v_get(pivot, 0);
-        x_used = *v_get(current_line, 0);
+        for (int y = p + 1; y < input->shape[1]; y++) {
+            current_line = v2d_get_line(input, y);
 
-        mul_line(pivot, x_used);
-        mul_line(current_line, -x_pivot);
+            x_pivot = *v_get(pivot, p);
+            x_used = *v_get(current_line, p);
 
-        result_line = add_lines(current_line, pivot);
+            mul_line(pivot, x_used);
+            mul_line(current_line, -x_pivot);
 
-        v2d_set_line(input, y, result_line->array, result_line->lenght);
-        
-        DestroyVector(current_line);
-        DestroyVector(result_line);
+            result_line = add_lines(current_line, pivot);
+
+            v2d_set_line(input, y, result_line->array, result_line->lenght);
+            
+            DestroyVector(current_line);
+            DestroyVector(result_line);
+        }
+
+        DestroyVector(pivot);
     }
-
-    DestroyVector(pivot);
 }
 
 
