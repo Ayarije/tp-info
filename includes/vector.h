@@ -62,6 +62,16 @@ void v_set(Vector* v, int i, int value) {
     v->array[i] = value;
 }
 
+int v_sum(Vector* v) {
+  int sum = 0;
+
+  for (int i = 0; i < v->lenght; i++) {
+    sum += v->array[i];
+  }
+  
+  return sum;
+}
+
 void v_append(Vector* v, int value) {
     int* new_array = malloc(sizeof(int)*(v->lenght + 1));
     
@@ -73,6 +83,19 @@ void v_append(Vector* v, int value) {
     free(v->array);
     v->array = new_array;
     v->lenght++;
+}
+
+Vector* v_sum_vectors(Vector* l1, Vector* l2) {
+
+  if (l1->lenght != l2->lenght) { return InitVector(); }
+
+  Vector* result = InitVectorWithValue(l1->lenght, 0);
+  
+  for (int i = 0; i < l1->lenght; i++) {
+    result->array[i] = l1->array[i] + l2->array[i];
+  }
+
+  return result;
 }
 
 void v_pop(Vector* v) {
