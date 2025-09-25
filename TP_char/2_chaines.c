@@ -3,50 +3,128 @@
 #include <string.h>
 
 
+int min(int a, int b) {
+  if (a < b) {
+    return a;
+  } else {
+    return b;
+  }
+}
+
+int b_cmp_nb(int* n1, int* n2, int n1_len, int n2_len) {
+  // Compare deux nombre de base quelconque renvoie -1 si n1 < n2, 1 si n1 > n2 et 0 si n1 = n2
+  if (n1_len < n2_len) {
+    return -1;
+  }
+  if (n1_len > n2_len) {
+    return 1;
+  }
+
+  for (int i = n1_len - 1; i >= 0; i--) { // Parcours n1 et n2 du début vers la fin
+    if (n1[i] == n2[i]) { continue; } // Si les 2 chiffres sont égaux passer au chiffre suivant
+
+    if (n1[i] < n2[i]) {
+      return -1;
+    }
+    if (n1[i] > n2[i]) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 void test_compare_two_str(char* s1, char* s2) {
   printf("%s == %s : %d\n", s1, s2, s1 == s2);
   printf("strcmp(%s, %s) : %d\n", s1, s2, strcmp(s1, s2));
 }
 
 char* ascii_string() {
-  char* ascii = (char*)malloc(sizeof(char)*129);
-  for (int i = 0; i < 128; i++) {
-    ascii[i] = (char) i;
+  char* ascii = (char*)malloc(sizeof(char)*128);
+  for (int i = 1; i < 128; i++) {
+    ascii[i-1] = (char) i;
   }
-  ascii[128] = '\0';
+  ascii[127] = '\0';
   return ascii;
 }
 
 char* string_exclude_btw(char a, char b) { // Pour a = 65 et b = 122
-  int length =  128 - ((int)b) + ((int)a) + 2;
-  char* s = (char*)malloc(sizeof(char)*length); // Liste de taille 72
+  int length =  ((int) b) - ((int) a) + 1;
+  char* s = (char*) malloc(sizeof(char)*(length + 1)); // Liste de taille 
   
-  for (int i = 0; i <= (int) a; i++) { // De 0 à 65 inclus : 66
-    s[i] = (char) i;
+  for (int i = 0; i < length; i++) {
+    s[i] = ((char) i + ((int) a));
   }
   
-  for (int i = 0; i < 128 - ((int) b); i++) { // De 122 à 128 exclus : 6
-    s[i] = (char) (i + (int) b);
-  }
-  // total : 72
-  
-  s[128 - ((int)b) + ((int)a)] = '\0'; // 110 + 1 = 111
+  s[length] = '\0'; // 110 + 1 = 111
   return s;
 }
 
+int my_strlen(char* s) { // Linéaire (P = nP)
+  int i = 0;
+  while (s[i] != '\0') {
+    i++;
+  }
+  return i;
+}
+
+int my_strcmp(char* s1, char* s2) { // Linéaire (P = 5nP)
+  int len_s1 = my_strlen(s1);
+  int len_s2 = my_strlen(s2);
+
+  int* int_s1 = (int*) malloc(sizeof(int) * len_s1);
+  int* int_s2 = (int*) malloc(sizeof(int) * len_s2);
+
+  for (int i = 0; i < len_s1; i++) {
+    int_s1[i] = (int) s1[i];
+  }
+
+  for (int i = 0; i < len_s2; i++) {
+    int_s2[i] = (int) s2[i];
+  }
+  
+  int result = b_cmp_nb(int_s1, int_s2, len_s1, len_s2) * -1;
+
+  free(int_s1);
+  free(int_s2);
+  return result;
+}
+
+char* my_strcpy(char* dst_string, char* src_string) { // Linéaire (P = nP)
+  int len = my_strlen(src_string);
+  for (int i = 0; i < len; i++) {
+    dst_string[i] = src_string[i];
+  }
+  dst_string[len] = '\0';
+  return dst_string;
+}
+
+char* strcat(char* s1, char* s2) {
+  int len_s1 = my_strlen(s1);
+  int len_s2 = my_strlen(s2);
+
+  char* result = (char*) malloc(sizeof(char) * )
+  
+}
 
 int main() {
-  char s_1[] = "hello";
+  char s_1[] = "hellkqn,fd";
   char s_2[] = "hello";
   test_compare_two_str(s_1, s_2);
+  printf("my_strcmp(%s, %s) : %d\n", s_1, s_2, my_strcmp(s_1, s_2));
 
+  char* dst = malloc(sizeof(char) * (my_strlen(s_1) + 1));
+  dst = my_strcpy(dst, s_1);
+  printf("my_strcpy(%s) = %s\n", s_1, dst);
+  
   char* ascii = ascii_string();
   printf("%s\n", ascii);
-
+  
   char* excluded_str = string_exclude_btw('A', 'z');
   printf("%s\n", excluded_str);
   
   free(ascii);
   free(excluded_str);
+  free(dst);
   return 0;
 }
