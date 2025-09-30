@@ -10,9 +10,8 @@
 typedef struct formula
 {
     Vector* f;   // Formule principale
-    int** sf; // Ensemble des sous formules
+    Vector** sf; // Ensemble des sous formules
     int size;    // Taille de la formule (sf->lenght)
-    int height;  // Hauteur de la formule
 } Formula;
 
 
@@ -27,9 +26,10 @@ char f_table_i_c(int id) {
     case 5: return 'O';
     case 6: return 'N';
     default:
-        char* alphabet = "abcdefghijklmnopkrstuvwxyz";
-        if (id + 6 >= 32) { return ' '; }
-        return alphabet[id + 6];
+        char* alphabet = "abcdefghijklmnopqrstuvwxyz";
+        int idx = id - 7; // alphabet commence à 7
+        if (idx < 0 || idx >= 26) return '?';
+        return alphabet[idx];
     }
 }
 
@@ -45,10 +45,12 @@ int f_table_c_i(char c) {
     case 'N': return 6;
     default:
         char* alphabet = "abcdefghijklmnopkrstuvwxyz";
-        for (int i = 6; i < 32; i++) {
-            if (alphabet[i-6] == c) {return i; }
+        int len = strlen(alphabet);
+        for (int i = 0; i < len; i++) {
+            if (alphabet[i] == c) return i + 7;
         }
-        return -1;
+        fprintf(stderr, "Unknown character in formula: %c\n", c);
+        return -1; // error code
     }
 }
 
@@ -56,9 +58,91 @@ Formula* InitFormule(char* f) {
     Formula* formula = (Formula*) malloc(sizeof(Formula));
     
     formula->f = InitVector();
-    for (int i = 0; i < strlen(f); i++) { v_append(formula->f, f_table_c_i(f[i])); }
 
+    formula->size = 0;
     
+    for (int i = 0; i < (int) strlen(f); i++) {
+        // Calculate size
+        if (f[i] == '&' || f[i] == '|') {
+            formula->size = formula->size + 2;
+        } else if (f[i] == '-') {
+            formula->size++;
+        }
+
+        int code = f_table_c_i(f[i]);
+        if (code == -1) {
+            fprintf(stderr, "Invalid symbol in formula: %c\n", f[i]);
+            free(formula);
+            return NULL;
+        }
+        v_append(formula->f, code);
+    }
+
+    formula->sf = malloc(sizeof(Vector*) * formula->size);
+    int cursor = 0;
+
+    int open_p; // nb de parenthèse ouvertes
+    int closed_p; // nb de parenthèse fermées
+
+    for (int i = 0 ; i < formula->f->length; i++) {
+
+        if (*v_get(formula->f, i) != 3) { // Cherche la première parenthèse ouvrante
+            continue;
+        }
+
+        open_p = 1;
+        closed_p = 0;
+
+        for (int j = i + 1; j < formula->f->length; j++) { // cherche un equilibrage
+
+            switch (*v_get(formula->f, j))
+            {
+                case 3: open_p++; break;
+                case 4: closed_p++; break;
+                default: break;
+            }
+
+            if (open_p == closed_p) {
+                formula->sf[cursor] = v_get_btw(formula->f, i + 1, j - 1);
+                cursor++;
+                // Due à une mauvaise formulation de f
+                if (cursor >= formula->size) {
+                    
+                }
+                break;
+            }
+        }
+    }
+
+    return formula;
+}
+
+void DestroyFormule(Formula* f) {
+    for (int i = 0; i< f->size; i++) {
+        DestroyVector(f->sf[i]);
+    }
+    free(f->sf);
+    DestroyVector(f->f);
+    free(f);
+}
+
+void f_print(Formula* f) {
+    for (int i = 0; i < f->f->length; i++) {
+        printf("%c", f_table_i_c(*v_get(f->f, i)));
+    }
+    printf("\n");
+}
+
+void f_sf_print(Formula* f) {
+    for (int i = 0; i < f->size; i++) {
+
+        for (int j = 0; j < f->sf[i]->length; j++) {
+
+            printf("%c", f_table_i_c(*v_get(f->sf[i], j)));
+
+        }
+        printf("\n");
+    }
 }
 
 #endif

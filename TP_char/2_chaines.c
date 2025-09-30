@@ -48,7 +48,7 @@ char* ascii_string() {
   return ascii;
 }
 
-char* string_exclude_btw(char a, char b) { // Pour a = 65 et b = 122
+char* string_only_btw(char a, char b) { // Pour a = 65 et b = 122
   int length =  ((int) b) - ((int) a) + 1;
   char* s = (char*) malloc(sizeof(char)*(length + 1)); // Liste de taille 
   
@@ -99,12 +99,23 @@ char* my_strcpy(char* dst_string, char* src_string) { // Linéaire (P = nP)
   return dst_string;
 }
 
-char* strcat(char* s1, char* s2) {
+char* my_strcat(char* s1, char* s2) {
   int len_s1 = my_strlen(s1);
   int len_s2 = my_strlen(s2);
 
-  char* result = (char*) malloc(sizeof(char) * )
+  char* result = (char*) malloc(sizeof(char) * (len_s1 + len_s2 + 1));
+
+  for (int i = 0; i < len_s1; i++)
+  {
+    result[i] = s1[i];
+  }
+  for (int i = len_s1; i < len_s1 + len_s2; i++)
+  {
+    result[i] = s2[i - len_s1];
+  }
+  result[len_s1 + len_s2] = '\0';
   
+  return result;
 }
 
 int main() {
@@ -113,18 +124,22 @@ int main() {
   test_compare_two_str(s_1, s_2);
   printf("my_strcmp(%s, %s) : %d\n", s_1, s_2, my_strcmp(s_1, s_2));
 
+  char* concatenated = my_strcat(s_1, s_2);
+  printf("\"%s\" + \"%s\" = \"%s\"\n", s_1, s_2, concatenated);
+
   char* dst = malloc(sizeof(char) * (my_strlen(s_1) + 1));
   dst = my_strcpy(dst, s_1);
   printf("my_strcpy(%s) = %s\n", s_1, dst);
   
   char* ascii = ascii_string();
-  printf("%s\n", ascii);
+  printf("ASCII table: %s\n", ascii);
   
-  char* excluded_str = string_exclude_btw('A', 'z');
-  printf("%s\n", excluded_str);
+  char* excluded_str = string_only_btw('A', 'z');
+  printf("btw A and z: %s\n", excluded_str);
   
   free(ascii);
   free(excluded_str);
   free(dst);
+  free(concatenated);
   return 0;
 }

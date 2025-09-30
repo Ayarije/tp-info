@@ -21,7 +21,7 @@ int biggest_sum(Vector* array, int k) {
     int max_sum = -32768;
     int max_i = 0;
 
-    for (int i = 0; i < array->lenght - k; i++) {
+    for (int i = 0; i < array->length - k; i++) {
 
         sum += *v_get(array, i);
 
@@ -40,9 +40,9 @@ int biggest_sum(Vector* array, int k) {
 
 
 Vector* count_occurence(Vector* array) {
-    Vector* count_arr = InitVectorWithValue(array->lenght, 0);
+    Vector* count_arr = InitVectorWithValue(array->length, 0);
 
-    for (int i = 0; i < array->lenght; i++) {
+    for (int i = 0; i < array->length; i++) {
         v_set(count_arr, i, v_count(array, *v_get(array, i)));
     }
 
@@ -53,21 +53,24 @@ Vector* count_occurence(Vector* array) {
 int main() {
     Vector* rng_array = random_array(16, 100, 5414);
 
-    Vector* simple_array = InitVector();
-    v_append(simple_array, 5);
-    v_append(simple_array, 4);
-    v_append(simple_array, 7);
-    v_append(simple_array, 2);
-    v_append(simple_array, 3);
+    Vector* simple_array = InitVectorWithValue(5, 0);
+    v_set(simple_array, 0, 5);
+    v_set(simple_array, 1, 4);
+    v_set(simple_array, 2, 7);
+    v_set(simple_array, 3, 2);
+    v_set(simple_array, 4, 3);
 
-    int max_sum = biggest_sum(simple_array, 3);
-    Vector* count = count_occurence(rng_array);
-
+    int max_sum = biggest_sum(rng_array, 3);
+    printf("first index of max consecutive sum of 3 nb in ");
     v_print(rng_array);
-    v_print(count);
+    printf("= %d\n", max_sum);
 
-    v_print(simple_array);
-    printf("first index of max consecutive sum of 3 nb : %d\n", max_sum);
+    Vector* count = count_occurence(rng_array);
+    
+    printf("Vector     : ");
+    v_print(rng_array);
+    printf("Occurences : ");
+    v_print(count);
 
     DestroyVector(rng_array);
     DestroyVector(simple_array);

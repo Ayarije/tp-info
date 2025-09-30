@@ -5,7 +5,7 @@
 
 
 void mul_line(Vector* line, int n) {
-    for (int i = 0; i < line->lenght; i++) {
+    for (int i = 0; i < line->length; i++) {
         v_set(line, i, *v_get(line, i) * n);
     }
 }
@@ -13,9 +13,9 @@ void mul_line(Vector* line, int n) {
 Vector* add_lines(Vector* l1, Vector* l2) {
     Vector* new_line = InitVector();
 
-    if (l1->lenght != l2->lenght) { return new_line; }
+    if (l1->length != l2->length) { return new_line; }
     
-    for (int i = 0; i < l1->lenght; i++) {
+    for (int i = 0; i < l1->length; i++) {
         v_append(new_line, *v_get(l1, i) + *v_get(l2, i));
     }
 
@@ -44,7 +44,7 @@ void point_fixe(Vector2d* input) {
 
             result_line = add_lines(current_line, pivot);
 
-            v2d_set_line(input, y, result_line->array, result_line->lenght);
+            v2d_set_line(input, y, result_line->array, result_line->length);
             
             DestroyVector(current_line);
             DestroyVector(result_line);
