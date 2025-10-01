@@ -34,6 +34,17 @@ Vector* InitVectorWithValue(int size, int value) { // Sized vector constructor
     return v;
 }
 
+Vector* InitVectorArray(int size, int* array) {
+    Vector* v = malloc(sizeof(Vector));
+    if (!v) { return NULL; }
+    v->length = size;
+    v->array = malloc(sizeof(int)*v->length);
+
+    for (int i = 0; i < v->length; i++) { v->array[i] = array[i]; }
+
+    return v;
+}
+
 Vector* CopyVector(Vector* v) { // Copy constructor
     Vector* new_v = malloc(sizeof(Vector));
     if (!v) { return NULL; }
@@ -62,8 +73,18 @@ int* v_get(Vector* v, int i) { // Get a vector's value at i index
     return &v->array[i];
 }
 
+int v_cmp(Vector* v1, Vector* v2) {
+    if (v1->length != v2->length) { return 0; }
+
+    for (int i = 0; i < v1->length; i++) { 
+        if (v1->array[i] != v2->array[i]) { return 0; }
+    }
+    
+    return 1;
+}
+
 Vector* v_get_btw(Vector* v, int x, int y) {
-    if (x < 0 || x > y || y < x || y >= v->length) { return NULL; }
+    if (x < 0 || x > y || y < x || y >= v->length) { return InitVector(); }
 
     Vector* result = InitVectorWithValue(y - x + 1, 0);
 

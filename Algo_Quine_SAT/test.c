@@ -3,7 +3,7 @@
 
 int main() {
 
-    Formula* formula = InitFormule("((a)&(b))&(c)");
+    Formula* formula = InitFormule("((a)&(b))&((a)|(!(c)))");
 
     f_print(formula);
     f_sf_print(formula);
