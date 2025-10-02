@@ -6,6 +6,7 @@
 CC := gcc
 INCDIR := includes
 CFLAGS := -g -Wall -Wextra -fsanitize=address -I$(INCDIR)
+LIBFLAGS := -lm
 
 # find all .c files but skip includes/ and any build/ directories
 SOURCES := $(shell find . -type f -name '*.c' -not -path './$(INCDIR)/*' -not -path '*/build/*' -print)
@@ -16,7 +17,7 @@ SOURCES := $(patsubst ./%,%,$(SOURCES))
 EXES := $(foreach s,$(SOURCES),$(dir $(s))build/$(notdir $(s:.c=.exe)))
 
 # find all header file in includes/file.h
-HEADERS := $(wildcard includes/*.h)
+HEADERS := $(wildcard includes/*)
 
 # unique list of build directories (without trailing slash)
 BUILD_DIRS := $(sort $(patsubst %/,%,$(dir $(EXES))))
@@ -35,7 +36,7 @@ $(foreach d,$(BUILD_DIRS),$(eval $(d): ; mkdir -p $(d)))
 #     $(CC) $(CFLAGS) -o $@ $<
 define MK_RULE
 $1: $2 | $3
-	$(CC) $(CFLAGS) -o $$@ $$<
+	$(CC) $(CFLAGS) -o $$@ $$< $(HEADERS) $(LIBFLAGS)
 endef
 
 # emit a rule for each source -> target
