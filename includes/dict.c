@@ -11,6 +11,21 @@ dict_t* InitDict() {
     return dict;
 }
 
+dict_t* CopyDict(dict_t* d) {
+    dict_t* new_d = (dict_t*) malloc(sizeof(dict_t));
+
+    new_d->keys = (Vector**) malloc(sizeof(Vector) * d->size);
+    new_d->values = (int*) malloc(sizeof(int) * d->size);
+    new_d->size = d->size;
+
+    for (int i = 0; i < new_d->size; i++) {
+        new_d->keys[i] = CopyVector(d->keys[i]);
+        new_d->values[i] = d->values[i];
+    }
+
+    return new_d;
+}
+
 void DestroyDict(dict_t* d) {
     for (int i = 0; i < d->size; i++) {
         DestroyVector(d->keys[i]);
@@ -25,8 +40,8 @@ void d_put(dict_t* d, Vector* key, int value) {
         if (v_cmp(key, d->keys[i])) { return; }
     }
 
-    Vector** r_keys = (Vector**) malloc(sizeof(Vector) * d->size+1);
-    int* r_values = (int*) malloc(sizeof(int) * d->size + 1);
+    Vector** r_keys = (Vector**) malloc(sizeof(Vector) * (d->size + 1));
+    int* r_values = (int*) malloc(sizeof(int) * (d->size + 1));
 
     for (int i = 0; i < d->size; i++) {
         r_keys[i] = d->keys[i];
@@ -44,8 +59,8 @@ void d_put(dict_t* d, Vector* key, int value) {
 }
 
 void d_delete(dict_t* d, Vector* key) {
-    Vector** r_keys = (Vector**) malloc(sizeof(Vector) * d->size - 1);
-    int* r_values = (int*) malloc(sizeof(int) * d->size - 1);
+    Vector** r_keys = (Vector**) malloc(sizeof(Vector) * (d->size - 1));
+    int* r_values = (int*) malloc(sizeof(int) * (d->size - 1));
 
     int c = 0;
     for (int i = 0; i < d->size - 1; i++) {
@@ -71,6 +86,7 @@ int d_get(dict_t* d, Vector* key) {
 
         return d->values[i];
     }
+    return NULL;
 }
 
 void d_set(dict_t* d, Vector* key, int value) {
@@ -86,4 +102,14 @@ int d_contains(dict_t* d, Vector* key) {
         if (v_cmp(key, d->keys[i])) { return 1; }
     }
     return 0;
+}
+
+void d_print(dict_t* d) {
+    for (int i = 0; i < d->size; i++) {
+        printf("[");
+        for (int j = 0; j < d->keys[i]->length - 1; j++) {
+            printf("%d ", *v_get(d->keys[i], j));
+        }
+        printf("%d] : %d\n", *v_get(d->keys[i], d->keys[i]->length-1), d->values[i]);
+    }
 }

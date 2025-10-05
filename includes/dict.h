@@ -16,6 +16,7 @@ typedef struct dict_s {
 
 dict_t* InitDict();
 void DestroyDict(dict_t* d);
+dict_t* CopyDict(dict_t* d);
 
 void d_put(dict_t* d, Vector* key, int value);
 void d_delete(dict_t* d, Vector* key);
@@ -23,5 +24,7 @@ void d_delete(dict_t* d, Vector* key);
 int d_get(dict_t* d, Vector* key);
 void d_set(dict_t* d, Vector* key, int value);
 int d_contains(dict_t* d, Vector* key);
+
+void d_print(dict_t* d);
 
 #endif

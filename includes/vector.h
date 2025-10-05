@@ -39,7 +39,7 @@ int v_max(Vector* v);
 int v_index(Vector* v, int value);
 int v_count(Vector* v, int value);
 
-int v_cmp(Vector* v1, Vector* v2);
+int v_cmp(Vector* v1, Vector* v2); // return 1 if v1 == v2 else return 0
 
 void v_print(Vector* v);
 

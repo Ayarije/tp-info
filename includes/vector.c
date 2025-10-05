@@ -148,13 +148,22 @@ void v_insert(Vector* v, int value, int index) { // Insert a cell at i index in 
 
     int* new_array = malloc(sizeof(int)*(v->length + 1)); // Create new array of length + 1
     
+    // If vector of size 0
+    if (v->length == 0) {
+        new_array[0] = value;
+        free(v->array);
+        v->array = new_array;
+        v->length++;
+        return;
+    }
+
     // Fill it until index i
-    for (int i = 0; i < v->length - index; i++) {
+    for (int i = 0; i <= index; i++) {
         new_array[i] = v->array[i];
     }
-    new_array[index] = value; // insert value
-    for (int i = index+1; i < v->length+1; i++) { // finish filling it
-        new_array[i] = v->array[i];
+    new_array[index + 1] = value; // insert value
+    for (int i = index+2; i <= v->length; i++) { // finish filling it
+        new_array[i] = v->array[i-1];
     }
 
     free(v->array);

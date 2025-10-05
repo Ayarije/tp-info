@@ -21,18 +21,25 @@ typedef struct formula_s
 
 char f_table_i_c(int id);
 int f_table_c_i(char c);
+Vector* f_str_to_vec(char* str_f);
+char* f_vec_to_str(Vector* vec_f);
 
 // Init Formule SubFunctions
 int calculate_size_and_encode_f(formula_t* f, char* str_f);
-int build_sf(formula_t* f);
-int sort_sf_by_length(formula_t* f);
+void build_sf(formula_t* f);
+void sort_sf_by_length(formula_t* f);
 
 formula_t* InitFormule(char* f);
 void DestroyFormule(formula_t* f);
 
 void f_print(formula_t* f);
 void f_sf_print(formula_t* f);
+void f_print_val(dict_t* val);
 
-int f_check_valuation(formula_t* f, Vector* vars, Vector* values);
+dict_t* f_get_global_valuation(formula_t* f, dict_t* valuation);
+
+formula_t* f_substitute(formula_t* f, Vector* old_f, Vector* new_f);
+
+void quine_minimization(formula_t* f);
 
 #endif

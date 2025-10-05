@@ -29,9 +29,6 @@ image_t* new_image(int h, int w){
 
 void free_image(image_t* image){
   for (int y = 0; y < image->h; y++) {
-    for (int x = 0; x < image->w; x++) {
-      free(image->pixels[y][x]);
-    }
     free(image->pixels[y]);
   }
   free(image);
