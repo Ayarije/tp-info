@@ -6,6 +6,20 @@ int main() {
 
   image_save(img, "TP_seam_carving/black.png");
 
+  image_t* broadway = image_read("TP_seam_carving/broadway_seam.png");
+
+  vertical_flip(broadway);
+  image_save(broadway, "TP_seam_carving/broadway_seam_v_flipped.png");
+  vertical_flip(broadway);
+
+  horizontal_flip(broadway);
+  image_save(broadway, "TP_seam_carving/broadway_seam_h_flipped.png");
+  horizontal_flip(broadway);
+
+  inverse_image(broadway);
+  image_save(broadway, "TP_seam_carving/broadway_seam_inv.png");
+  
+  free_image(broadway);
   free_image(img);
   return 0;
 }

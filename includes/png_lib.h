@@ -14,4 +14,10 @@ void free_image(image_t* image);
 image_t* image_read(char *filename);
 void image_save(image_t *im, char *filename);
 
+void horizontal_flip(image_t* im);
+void vertical_flip(image_t* im);
+void inverse_image(image_t* im);
+
+void subsampling(image_t* im, double factor);
+
 #endif

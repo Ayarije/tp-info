@@ -74,3 +74,63 @@ void image_save(image_t* image, char *filename){
     }
     free(data);
 }
+
+void vertical_flip(image_t* im) {
+  int* result;
+  for (int y = 0; y < im->h; y++) {
+    result = malloc(sizeof(int) * im->w);
+    for (int x = 0; x < im->w; x++) {
+      int flip_x = x - im->w + 1;
+      if (flip_x < 0) { flip_x = flip_x * -1; }
+      result[x] = im->pixels[y][flip_x];
+    }
+    free(im->pixels[y]);
+    im->pixels[y] = result;
+  }
+}
+
+void horizontal_flip(image_t* im) {
+  int** result = malloc(sizeof(int*) * im->h);
+
+  for (int y = 0; y < im->h; y++) {
+    int flip_y = y - im->h + 1;
+    if (flip_y < 0) { flip_y = flip_y * -1; }
+
+    result[y] = im->pixels[flip_y];
+  }
+  
+  free(im->pixels);
+  im->pixels = result;
+}
+
+void inverse_image(image_t* im) {
+  int inv_color;
+  for (int y = 0; y < im->h; y++) {
+    for (int x = 0; x < im->w; x++) {
+      inv_color = im->pixels[y][x] - 255;
+      if (inv_color < 0) { inv_color = inv_color * -1; }
+      im->pixels[y][x] = inv_color;
+    }
+  }
+}
+
+double modulo(double a, int b) {
+  int q = a/b;
+  return a - q;
+}
+
+int get_denom(double nb) { // Get the denominator of the most simplified fraction of a double
+  // 
+  int denom = 1;
+  double d_num = nb;
+  while (modulo(d_num, 1) != 1) {
+    denom++;
+    d_num = nb * denom;
+  }
+  int num = d_num;
+}
+
+void subsampling(image_t* im, double factor) {
+  
+  int old_im_p_size = (1 - factor);
+}
