@@ -685,7 +685,7 @@ void quine_minimization(formula_t* f) {
                     break;
                 }
                 
-                if (conn_value != NULL && *conn_value == 1) { // (0)&(f) = 0
+                if (conn_value != NULL && *conn_value == 2) { // (0)&(f) = 0
                     start_i = i + 3;
                     open_p = 0;
                     closed_p = 0;
