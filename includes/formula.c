@@ -95,8 +95,8 @@ char f_table_i_c(int id) {
     case 2: return '&';
     case 3: return '(';
     case 4: return ')';
-    case 5: return 'O';
-    case 6: return 'N';
+    case 5: return '1';
+    case 6: return '0';
     default:
         char* alphabet = "abcdefghijklmnopqrstuvwxyz";
         int idx = id - 7; // alphabet commence à 7
@@ -113,8 +113,8 @@ int f_table_c_i(char c) {
     case '&': return 2;
     case '(': return 3;
     case ')': return 4;
-    case 'O': return 5;
-    case 'N': return 6;
+    case '1': return 5;
+    case '0': return 6;
     default:
         char* alphabet = "abcdefghijklmnopkrstuvwxyz";
         int len = strlen(alphabet);
@@ -423,16 +423,302 @@ void quine_minimization(formula_t* f) {
      - !(0) = 1
      - !(1) = 0
      - (1)|(f) = (f)|(1) = 1
-     - (0)|(f) = (f)|(0) = f
+     - (0)|(f) = (f)|(0) = f 
      - (1)&(f) = (f)&(1) = f
      - (0)&(f) = (f)&(0) = 0
     */
+    
+    Vector* temp_f; // Treated f
 
+    int* conn_value;
 
-    for (int i = 0; i < f->f->length; i++) {
-        
-        
+    int start_i;
+    int end_i;
 
+    int open_p;
+    int closed_p;
 
+    while ((v_contain(f->f, 5) || v_contain(f->f, 6)) && f->f->length != 1) {
+        temp_f = CopyVector(f->f);
+
+        for (int i = 0; i < temp_f->length; i++) {
+            switch (*v_get(temp_f, i))
+            {
+            case 5: // top
+                conn_value = v_get(f->f, i-2);
+                
+                if (conn_value != NULL && *conn_value == 0) { // !(1) = 0
+                    
+                    v_set(temp_f, i-2, 6); // Replace not by bot
+                    // shift everything to the left
+                    for (int j = i+2; j < temp_f->length; j++) {
+                        v_set(temp_f, j - 3, *v_get(temp_f, j));
+                    }
+                    temp_f->length = temp_f->length - 3;
+
+                    break;
+                }
+
+                if (conn_value != NULL && *conn_value == 1) { // (f)|(1) = 1
+                    end_i = i - 3;
+                    open_p = 0;
+                    closed_p = 0;
+                    
+                    for (int j = end_i; j >= 0; j--) {
+                        switch (*v_get(temp_f, j))
+                        {
+                            case 3: open_p++; break;
+                            case 4: closed_p++; break;
+                            default: break;
+                        } // compte le nombre de parenthèses ouvertes et fermées
+
+                        if (open_p != closed_p) { continue; }
+                        start_i = j;
+                        break;
+                    }
+
+                    v_set(temp_f, start_i, 5);
+                    for (int j = i + 2; j < temp_f->length; j++) {
+                        v_set(temp_f, j - end_i + start_i - 4, *v_get(temp_f, j));
+                    }
+                    temp_f->length = temp_f->length - 4 - end_i + start_i;
+
+                    break;
+                }
+
+                if (conn_value != NULL && *conn_value == 2) { // (f)&(1) = f
+                    end_i = i - 3;
+                    open_p = 0;
+                    closed_p = 0;
+                    
+                    for (int j = end_i; j >= 0; j--) {
+                        switch (*v_get(temp_f, j))
+                        {
+                            case 3: open_p++; break;
+                            case 4: closed_p++; break;
+                            default: break;
+                        } // compte le nombre de parenthèses ouvertes et fermées
+
+                        if (open_p != closed_p) { continue; }
+                        start_i = j;
+                        break;
+                    }
+
+                    for (int j = start_i + 1; j < temp_f->length; j++) {
+                        if (j < end_i) {
+                            v_set(temp_f, j - 1, *v_get(temp_f, j));
+                        }
+                        if (j > end_i + 5) {
+                            v_set(temp_f, j - 5, *v_get(temp_f, j));
+                        }
+                    }
+                    temp_f->length = temp_f->length - 6;
+
+                    break;
+                }
+                
+                conn_value = v_get(f->f, i+2);
+
+                if (conn_value != NULL && *conn_value == 2) { // (1)&(f) = f
+                    start_i = i + 3;
+                    open_p = 0;
+                    closed_p = 0;
+                    
+                    for (int j = start_i; j < temp_f->length; j++) {
+                        switch (*v_get(temp_f, j))
+                        {
+                            case 3: open_p++; break;
+                            case 4: closed_p++; break;
+                            default: break;
+                        } // compte le nombre de parenthèses ouvertes et fermées
+
+                        if (open_p != closed_p) { continue; }
+                        end_i = j;
+                        break;
+                    }
+
+                    for (int j = start_i + 1; j < temp_f->length; j++) {
+                        if (j < end_i) {
+                            v_set(temp_f, j - 5, *v_get(temp_f, j));
+                        }
+                        if (j > end_i) {
+                            v_set(temp_f, j - 6, *v_get(temp_f, j));
+                        }
+                    }
+                    temp_f->length = temp_f->length - 6;
+
+                    break;
+                }
+                
+                if (conn_value != NULL && *conn_value == 1) { // (1)|(f) = 1
+                    start_i = i + 3;
+                    open_p = 0;
+                    closed_p = 0;
+                    
+                    for (int j = start_i; j < temp_f->length; j++) {
+                        switch (*v_get(temp_f, j))
+                        {
+                            case 3: open_p++; break;
+                            case 4: closed_p++; break;
+                            default: break;
+                        } // compte le nombre de parenthèses ouvertes et fermées
+
+                        if (open_p != closed_p) { continue; }
+                        end_i = j;
+                        break;
+                    }
+
+                    v_set(temp_f, i - 1, 5);
+                    for (int j = end_i + 1; j < temp_f->length; j++) {
+                        v_set(temp_f, j - end_i + i, *v_get(temp_f, j));
+                    }
+                    temp_f->length = temp_f->length - end_i + start_i - 4;
+
+                    break;
+                }
+
+                break;
+            case 6: // bot
+                conn_value = v_get(f->f, i-2);
+
+                if (conn_value != NULL && *conn_value == 0) { // !(0) = 1
+                    
+                    v_set(temp_f, i-2, 5); // Replace not by top
+                    // shift everything to the left
+                    for (int j = i+2; j < temp_f->length; j++) {
+                        v_set(temp_f, j - 3, *v_get(temp_f, j));
+                    }
+                    temp_f->length = temp_f->length - 3;
+                    
+                    break;
+                }
+
+                if (conn_value != NULL && *conn_value == 2) { // (f)&(0) = 0
+                    end_i = i - 3;
+                    open_p = 0;
+                    closed_p = 0;
+                    
+                    for (int j = end_i; j >= 0; j--) {
+                        switch (*v_get(temp_f, j))
+                        {
+                            case 3: open_p++; break;
+                            case 4: closed_p++; break;
+                            default: break;
+                        } // compte le nombre de parenthèses ouvertes et fermées
+
+                        if (open_p != closed_p) { continue; }
+                        start_i = j;
+                        break;
+                    }
+
+                    v_set(temp_f, start_i, 6);
+                    for (int j = i + 2; j < temp_f->length; j++) {
+                        v_set(temp_f, j - end_i + start_i + 5, *v_get(temp_f, j));
+                    }
+                    temp_f->length = temp_f->length - 4 - end_i + start_i;
+
+                    break;
+                }
+
+                if (conn_value != NULL && *conn_value == 1) { // (f)|(0) = f
+                    end_i = i - 3;
+                    open_p = 0;
+                    closed_p = 0;
+                    
+                    for (int j = end_i; j >= 0; j--) {
+                        switch (*v_get(temp_f, j))
+                        {
+                            case 3: open_p++; break;
+                            case 4: closed_p++; break;
+                            default: break;
+                        } // compte le nombre de parenthèses ouvertes et fermées
+
+                        if (open_p != closed_p) { continue; }
+                        start_i = j;
+                        break;
+                    }
+
+                    for (int j = start_i + 1; j < temp_f->length; j++) {
+                        if (j < end_i) {
+                            v_set(temp_f, j - 1, *v_get(temp_f, j));
+                        }
+                        if (j > end_i + 5) {
+                            v_set(temp_f, j - 5, *v_get(temp_f, j));
+                        }
+                    }
+                    temp_f->length = temp_f->length - 6;
+
+                    break;
+                }
+                
+                conn_value = v_get(f->f, i+2);
+
+                if (conn_value != NULL && *conn_value == 1) { // (0)|(f) = f
+                    start_i = i + 3;
+                    open_p = 0;
+                    closed_p = 0;
+                    
+                    for (int j = start_i; j < temp_f->length; j++) {
+                        switch (*v_get(temp_f, j))
+                        {
+                            case 3: open_p++; break;
+                            case 4: closed_p++; break;
+                            default: break;
+                        } // compte le nombre de parenthèses ouvertes et fermées
+
+                        if (open_p != closed_p) { continue; }
+                        end_i = j;
+                        break;
+                    }
+
+                    for (int j = start_i + 1; j < temp_f->length; j++) {
+                        if (j < end_i) {
+                            v_set(temp_f, j - 5, *v_get(temp_f, j));
+                        }
+                        if (j > end_i) {
+                            v_set(temp_f, j - 6, *v_get(temp_f, j));
+                        }
+                    }
+
+                    temp_f->length = temp_f->length - 6;
+
+                    break;
+                }
+                
+                if (conn_value != NULL && *conn_value == 1) { // (0)&(f) = 0
+                    start_i = i + 3;
+                    open_p = 0;
+                    closed_p = 0;
+                    
+                    for (int j = start_i; j < temp_f->length; j++) {
+                        switch (*v_get(temp_f, j))
+                        {
+                            case 3: open_p++; break;
+                            case 4: closed_p++; break;
+                            default: break;
+                        } // compte le nombre de parenthèses ouvertes et fermées
+
+                        if (open_p != closed_p) { continue; }
+                        end_i = j;
+                        break;
+                    }
+
+                    v_set(temp_f, i - 1, 6);
+                    for (int j = end_i + 1; j < temp_f->length; j++) {
+                        v_set(temp_f, j - end_i + i, *v_get(temp_f, j));
+                    }
+                    temp_f->length = temp_f->length - end_i + start_i - 4;
+
+                    break;
+                }
+                
+                break;
+            default: break;
+            }
+        }
+
+        DestroyVector(f->f);
+        f->f = CopyVector(temp_f);
+        DestroyVector(temp_f);
     }
 }

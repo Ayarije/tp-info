@@ -96,9 +96,11 @@ void horizontal_flip(image_t* im) {
     int flip_y = y - im->h + 1;
     if (flip_y < 0) { flip_y = flip_y * -1; }
 
-    result[y] = im->pixels[flip_y];
+    result[y] = malloc(sizeof(int) * im->w);
+    for (int x = 0; x < im->w; x++) { result[y][x] = im->pixels[flip_y][x]; }
   }
   
+  for (int y = 0; y < im->h; y++) { free(im->pixels[y]); }
   free(im->pixels);
   im->pixels = result;
 }
@@ -119,18 +121,51 @@ double modulo(double a, int b) {
   return a - q;
 }
 
-int get_denom(double nb) { // Get the denominator of the most simplified fraction of a double
-  // 
-  int denom = 1;
-  double d_num = nb;
-  while (modulo(d_num, 1) != 1) {
-    denom++;
-    d_num = nb * denom;
+int pgcd(int a, int b) {
+  while (b != 0) {
+    int r = a % b;
+    a = b;
+    b = r;
   }
-  int num = d_num;
+  return a;
+}
+
+int get_denom(double nb) { // Get the denominator of the most simplified fraction of a double
+  int denom = 1000000;
+  int num = nb * denom;
+  printf("%f : %d/%d\n", nb, num, denom);
+
+  // Simplification de la fraction
+  int d = pgcd(num, denom);
+  while (d != 1) {
+    num = num / d;
+    denom = denom / d;
+    d = pgcd(num, denom);
+  }
+
+  return denom;
+}
+
+int get_num(double nb) { // Get the denominator of the most simplified fraction of a double
+  int denom = 1000000;
+  int num = nb * denom;
+  printf("%f : %d/%d\n", nb, num, denom);
+
+  // Simplification de la fraction
+  int d = pgcd(num, denom);
+  while (d != 1) {
+    num = num / d;
+    denom = denom / d;
+    d = pgcd(num, denom);
+  }
+
+  return num;
 }
 
 void subsampling(image_t* im, double factor) {
   
-  int old_im_p_size = (1 - factor);
+  int old_im_p_size = get_denom(factor);
+
+  printf("%d\n", old_im_p_size);
+
 }

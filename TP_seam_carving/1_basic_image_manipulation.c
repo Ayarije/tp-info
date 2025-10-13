@@ -18,7 +18,10 @@ int main() {
 
   inverse_image(broadway);
   image_save(broadway, "TP_seam_carving/broadway_seam_inv.png");
-  
+  inverse_image(broadway);
+
+  subsampling(img, 0.15);
+
   free_image(broadway);
   free_image(img);
   return 0;

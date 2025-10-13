@@ -225,6 +225,21 @@ int v_max(Vector* v) { // return the maximum value of the vector
     return max;
 }
 
+int v_max_i(Vector* v) {
+    if (v->length == 0) { return -1; }
+    int max = v->array[0];
+    int max_i = 0;
+
+    for (int i = 1; i < v->length; i++) {
+        if (v->array[i] > max) {
+            max = v->array[i];
+            max_i = i;
+        }
+    }
+
+    return max_i;
+}
+
 void v_bubble_sort(Vector* v) { // bubble sorting the vector
     int i, j;
     int swapped;
@@ -263,6 +278,13 @@ int v_count(Vector* v, int value) { // count how many values are in value are in
     }
 
     return count;
+}
+
+int v_contain(Vector* v, int value) {
+    for (int i = 0; i < v->length; i++) {
+        if (v->array[i] == value) { return 1; }
+    }
+    return 0;
 }
 
 Vector2d* Init2dVector(int w, int h, int value) {

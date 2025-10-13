@@ -30,11 +30,19 @@ int main() {
     f_print(formula);
     f_print(sub_f);
 
+    formula_t* quine_f = InitFormule("(d)|((c)&(!(((a)&(b))|(1))))");
+
+    printf("\nQuine minimization :\n");
+    f_print(quine_f);
+    quine_minimization(quine_f);
+    f_print(quine_f);
+
     DestroyDict(d);
     DestroyDict(val);
     
     DestroyFormule(sub_f);
     DestroyFormule(formula);
+    DestroyFormule(quine_f);
 
     DestroyVector(old_f);
     DestroyVector(new_f);
