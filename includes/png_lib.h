@@ -18,6 +18,6 @@ void horizontal_flip(image_t* im);
 void vertical_flip(image_t* im);
 void inverse_image(image_t* im);
 
-void subsampling(image_t* im, double factor);
+image_t* subsampling(image_t* im, double factor);
 
 #endif

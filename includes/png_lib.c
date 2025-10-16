@@ -31,6 +31,7 @@ void free_image(image_t* image){
   for (int y = 0; y < image->h; y++) {
     free(image->pixels[y]);
   }
+  free(image->pixels);
   free(image);
 }
 
@@ -96,11 +97,9 @@ void horizontal_flip(image_t* im) {
     int flip_y = y - im->h + 1;
     if (flip_y < 0) { flip_y = flip_y * -1; }
 
-    result[y] = malloc(sizeof(int) * im->w);
-    for (int x = 0; x < im->w; x++) { result[y][x] = im->pixels[flip_y][x]; }
+    result[y] = im->pixels[flip_y];
   }
   
-  for (int y = 0; y < im->h; y++) { free(im->pixels[y]); }
   free(im->pixels);
   im->pixels = result;
 }
@@ -133,7 +132,6 @@ int pgcd(int a, int b) {
 int get_denom(double nb) { // Get the denominator of the most simplified fraction of a double
   int denom = 1000000;
   int num = nb * denom;
-  printf("%f : %d/%d\n", nb, num, denom);
 
   // Simplification de la fraction
   int d = pgcd(num, denom);
@@ -149,7 +147,6 @@ int get_denom(double nb) { // Get the denominator of the most simplified fractio
 int get_num(double nb) { // Get the denominator of the most simplified fraction of a double
   int denom = 1000000;
   int num = nb * denom;
-  printf("%f : %d/%d\n", nb, num, denom);
 
   // Simplification de la fraction
   int d = pgcd(num, denom);
@@ -162,10 +159,81 @@ int get_num(double nb) { // Get the denominator of the most simplified fraction 
   return num;
 }
 
-void subsampling(image_t* im, double factor) {
-  
+image_t* reduce_sub(image_t* im, double factor) {
   int old_im_p_size = get_denom(factor);
+  int new_im_p_size = get_num(factor);
 
-  printf("%d\n", old_im_p_size);
+  int new_h = im->h*factor;
+  int new_w = im->w*factor;
 
+  image_t* result = new_image(new_h, new_w);
+
+  int offset_y = 0;
+  int offset_x = 0;
+
+  for (int y = 0; y < im->h; y++) {
+    if (y%old_im_p_size < old_im_p_size - new_im_p_size) {
+      offset_y++;
+      continue;
+    }
+
+    for (int x = 0; x < im->w; x++) {
+      if (x%old_im_p_size < old_im_p_size - new_im_p_size) {
+        offset_x++;
+        continue;
+      }
+      
+      result->pixels[y - offset_y][x - offset_x] = im->pixels[y][x];
+
+    }
+
+    offset_x = 0;
+  }
+
+  return result;
+}
+
+image_t* augment_sub(image_t* im, double factor) {
+  int old_im_p_size = get_denom(factor);
+  int new_im_p_size = get_num(factor);
+
+  int new_h = im->h*factor;
+  int new_w = im->w*factor;
+
+  image_t* result = new_image(new_h, new_w);
+
+  int offset_y = 0;
+  int offset_x = 0;
+
+  int line_skip = 0;
+
+  for (int y = 0; y < new_h; y++) {
+    if (y%new_im_p_size < new_im_p_size - old_im_p_size) {
+      offset_y++;
+      line_skip = 1;
+    }
+
+    for (int x = 0; x < new_w; x++) {
+      if (x%new_im_p_size < new_im_p_size - old_im_p_size && !line_skip) {
+        result->pixels[y + offset_y][x + offset_x] = im->pixels[y][x];
+        offset_x++;
+        continue;
+      }
+      
+      result->pixels[y][x] = im->pixels[y - offset_y][x - offset_x];
+    }
+
+    offset_x = 0;
+    line_skip = 0;
+  }
+
+  return result;
+}
+
+image_t* subsampling(image_t* im, double factor) {
+  if (factor <= 1) {
+    return reduce_sub(im, factor);
+  } else {
+    return augment_sub(im, factor);
+  }
 }
