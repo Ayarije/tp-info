@@ -246,7 +246,7 @@ image_t* subsampling(image_t* im, double factor) {
 }
 
 image_t* image_gradient(image_t* im) {
-  image_t* result = new_image(im->w, im->h);
+  image_t* result = new_image(im->h, im->w);
   int** p = im->pixels;
   
   for (int y = 1; y < im->h - 1; y++) {
