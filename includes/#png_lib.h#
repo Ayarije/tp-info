@@ -20,6 +20,6 @@ void inverse_image(image_t* im);
 
 image_t* subsampling(image_t* im, double factor);
 
-image_t* image_gradient();
+image_t* image_gradient(image_t* im);
 
 #endif

@@ -208,18 +208,25 @@ image_t* augment_sub(image_t* im, double factor) {
   int line_skip = 0;
 
   for (int y = 0; y < new_h; y++) {
-    if (y%new_im_p_size < new_im_p_size - old_im_p_size) {
+    if (y - offset_y >= im->h) { break; }
+    if (y%new_im_p_size >= old_im_p_size) {
       offset_y++;
       line_skip = 1;
     }
 
     for (int x = 0; x < new_w; x++) {
-      if (x%new_im_p_size < new_im_p_size - old_im_p_size && !line_skip) {
-        result->pixels[y + offset_y][x + offset_x] = im->pixels[y][x];
+      if (line_skip) {
+	result->pixels[y][x] = result->pixels[y - 1][x];// TODO: verifier le -2
+	continue;
+      }
+      
+      if (x%new_im_p_size >= old_im_p_size) {
+        result->pixels[y][x] = im->pixels[y - offset_y][x - offset_x - 1];
         offset_x++;
         continue;
       }
       
+      if (x - offset_x >= im->w) { break; }
       result->pixels[y][x] = im->pixels[y - offset_y][x - offset_x];
     }
 
@@ -237,3 +244,22 @@ image_t* subsampling(image_t* im, double factor) {
     return augment_sub(im, factor);
   }
 }
+
+image_t* image_gradient(image_t* im) {
+  image_t* result = new_image(im->w, im->h);
+  int** p = im->pixels;
+  
+  for (int y = 1; y < im->h - 1; y++) {
+    for (int x = 1; x < im->w - 1; x++) {
+
+      int p1 = abs(p[y][x-1] - p[y][x+1]);
+      int p2 = abs(p[y-1][x] - p[y+1][x]);
+      
+      result->pixels[y][x] = (p1 + p2)/2;
+      
+    }
+  }
+
+  return result;
+}
+

@@ -23,6 +23,14 @@ int main() {
   image_t* reduced_broadway = subsampling(broadway, 0.5);
   image_save(reduced_broadway, "TP_seam_carving/broadway_seam_subsampling.png");
 
+  image_t* augmented_broadway = subsampling(broadway, 1.5);
+  image_save(augmented_broadway, "TP_seam_carving/broadway_seam_a_subsampling.png");
+
+  image_t* gradient_broadway = image_gradient(broadway);
+  image_save(augmented_broadway, "TP_seam_carving/broadway_seam_gradient.png");
+
+  free_image(gradient_broadway);
+  free_image(augmented_broadway);
   free_image(reduced_broadway);
   free_image(broadway);
   free_image(img);
