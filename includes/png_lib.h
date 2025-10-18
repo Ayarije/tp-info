@@ -21,5 +21,9 @@ void inverse_image(image_t* im);
 image_t* subsampling(image_t* im, double factor);
 
 image_t* image_gradient();
+image_t* atomic_horizontal_shrink(image_t* im);
+image_t* horizontal_shrink(image_t* im, int nb_pixels_removed);
+image_t* atomic_horizontal_column_shrink(image_t* im);
+image_t* horizontal_column_shrink(image_t* im, int nb_pixels_removed);
 
 #endif

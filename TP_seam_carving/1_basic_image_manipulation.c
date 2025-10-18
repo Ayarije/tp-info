@@ -1,38 +1,110 @@
 #include <png_lib.h>
+#include <stdlib.h>
+
+#include "string.h"
+
+char** char_buffer;
+int char_buffer_cursor;
+
+char* build_path(char** paths, int nb_paths) {
+  int len = 0;
+  for (int i = 0; i < nb_paths; i++) { len += strlen(paths[i]); }
+  char* path = malloc(sizeof(char) * (len + 1));
+  
+  int cursor = 0;
+
+  for (int i = 0; i < nb_paths; i++) {
+    for (int j = 0; j < strlen(paths[i]); j++) {
+      path[cursor] = paths[i][j];
+      cursor++;
+    }
+  }
+  path[len] = '\0';
+
+  char_buffer[char_buffer_cursor] = path;
+  char_buffer_cursor++;
+  printf("Done : %s\n", path);
+  return path;
+}
+
+void test_all_functions_on(char* image_name, char* result_dir) {
+  image_t* im = image_read(build_path((char*[]) {"TP_seam_carving/", image_name, ".png"}, 3));
+
+  vertical_flip(im);
+  image_save(
+    im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_v_flipped.png"}, 4)
+  );
+  vertical_flip(im);
+
+  horizontal_flip(im);
+  image_save(
+    im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_h_flipped.png"}, 4)
+  );
+  horizontal_flip(im);
+
+  inverse_image(im);
+  image_save(
+    im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_inv.png"}, 4)
+  );
+  inverse_image(im);
+
+  image_t* reduced_im = subsampling(im, 0.5);
+  image_save(
+    reduced_im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_r_subsampling.png"}, 4)
+  );
+
+  image_t* augmented_im = subsampling(im, 1.5);
+  image_save(
+    augmented_im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_a_subsampling.png"}, 4)
+  );
+
+  image_t* gradient_im = image_gradient(im);
+  image_save(
+    gradient_im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_gradient.png"}, 4)
+  );
+
+  image_t* naive_im = horizontal_shrink(im, 50);
+  image_save(
+    naive_im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_naive_reduction.png"}, 4)
+  );
+
+  image_t* column_im = horizontal_column_shrink(im, 170);
+  image_save(
+    column_im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_column_reduction.png"}, 4)
+  );
+
+  free_image(column_im);
+  free_image(naive_im);
+  free_image(gradient_im);
+  free_image(augmented_im);
+  free_image(reduced_im);
+  free_image(im);
+}
 
 
 int main() {
-  image_t* img = new_image(100, 100);
+  char_buffer = malloc(sizeof(char*) * 1000);
 
+  image_t* img = new_image(100, 100);
   image_save(img, "TP_seam_carving/black.png");
 
-  image_t* broadway = image_read("TP_seam_carving/broadway_seam.png");
+  test_all_functions_on("bird", "bird/");
+  test_all_functions_on("broadway_seam", "broadway/");
+  test_all_functions_on("boat", "boat/");
 
-  vertical_flip(broadway);
-  image_save(broadway, "TP_seam_carving/broadway_seam_v_flipped.png");
-  vertical_flip(broadway);
+  for (int i = 0; i < char_buffer_cursor; i++) {
+    free(char_buffer[i]);
+  }
+  free(char_buffer);
 
-  horizontal_flip(broadway);
-  image_save(broadway, "TP_seam_carving/broadway_seam_h_flipped.png");
-  horizontal_flip(broadway);
-
-  inverse_image(broadway);
-  image_save(broadway, "TP_seam_carving/broadway_seam_inv.png");
-  inverse_image(broadway);
-
-  image_t* reduced_broadway = subsampling(broadway, 0.5);
-  image_save(reduced_broadway, "TP_seam_carving/broadway_seam_subsampling.png");
-
-  image_t* augmented_broadway = subsampling(broadway, 1.5);
-  image_save(augmented_broadway, "TP_seam_carving/broadway_seam_a_subsampling.png");
-
-  image_t* gradient_broadway = image_gradient(broadway);
-  image_save(augmented_broadway, "TP_seam_carving/broadway_seam_gradient.png");
-
-  free_image(gradient_broadway);
-  free_image(augmented_broadway);
-  free_image(reduced_broadway);
-  free_image(broadway);
   free_image(img);
   return 0;
 }

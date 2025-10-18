@@ -246,16 +246,42 @@ image_t* subsampling(image_t* im, double factor) {
 }
 
 image_t* image_gradient(image_t* im) {
-  image_t* result = new_image(im->h, im->w);
+  image_t* result = malloc(sizeof(image_t));
+  result->h = im->h;
+  result->w = im->w;
+
+  result->pixels = malloc(sizeof(int*) * im->h);
+
   int** p = im->pixels;
   
-  for (int y = 1; y < im->h - 1; y++) {
-    for (int x = 1; x < im->w - 1; x++) {
+  for (int y = 0; y < im->h; y++) {
+    result->pixels[y] = malloc(sizeof(int) * im->w);
 
-      int p1 = abs(p[y][x-1] - p[y][x+1]);
-      int p2 = abs(p[y-1][x] - p[y+1][x]);
+    int prev_y = y - 1;
+    int next_y = y + 1;
+    
+    if (y == 0) {
+      prev_y = y;
+    } else if (y == im->h - 1) {
+      next_y = y;
+    }
+
+    for (int x = 0; x < im->w; x++) {
+      int prev_x = x - 1;
+      int next_x = x + 1;
       
-      result->pixels[y][x] = (p1 + p2)/2;
+      if (x == 0) {
+        prev_x = x;
+      } else if (x == im->w - 1) {
+        next_x = x;
+      }
+      int p1 = abs(p[y][prev_x] - p[y][next_x]);
+      int p2 = abs(p[prev_y][x] - p[next_y][x]);
+      
+      result->pixels[y][x] = (
+        abs(p[y][prev_x] - p[y][next_x]) +
+        abs(p[prev_y][x] - p[next_y][x])
+      )/2;
       
     }
   }
@@ -263,3 +289,99 @@ image_t* image_gradient(image_t* im) {
   return result;
 }
 
+image_t* atomic_horizontal_shrink(image_t* im) {
+  image_t* gradient = image_gradient(im);
+  image_t* reduced_im = malloc(sizeof(image_t));
+  reduced_im->h = im->h;
+  reduced_im->w = im->w - 1;
+
+  reduced_im->pixels = malloc(sizeof(int*) * reduced_im->h);
+
+  for (int y = 0; y < im->h; y++) {
+    int min_grad_i = 0;
+    int x_offset = 0;
+
+    for (int x = 1; x < im->w; x++) {
+      if (gradient->pixels[y][x] < gradient->pixels[y][min_grad_i]) { min_grad_i = x; }
+    }
+
+    reduced_im->pixels[y] = malloc(sizeof(int) * reduced_im->w);
+
+    for (int x = 0; x < reduced_im->w; x++) {
+      if (x == min_grad_i) { x_offset = 1; }
+      reduced_im->pixels[y][x] = im->pixels[y][x + x_offset];
+    }
+  }
+  free_image(gradient);
+  return reduced_im;
+}
+
+image_t* horizontal_shrink(image_t* im, int nb_pixels_removed) {
+  image_t* result = atomic_horizontal_shrink(im);
+  image_t* temp;
+
+  for (int i = 1; i < nb_pixels_removed; i++) {
+    temp = atomic_horizontal_shrink(result);
+    free_image(result);
+    result = temp;
+  }
+
+  return result;
+}
+
+image_t* atomic_horizontal_column_shrink(image_t* im) {
+  image_t* gradient = image_gradient(im);
+  image_t* reduced_im = malloc(sizeof(image_t));
+  reduced_im->h = im->h;
+  reduced_im->w = im->w - 1;
+
+  reduced_im->pixels = malloc(sizeof(int*) * reduced_im->h);
+
+  int min_col = 0;
+  int min_sum = INT_MAX;
+
+  for (int x = 0; x < gradient->w; x++) {
+    int sum = 0;
+
+    for (int y = 0; y < gradient->h; y++) {
+      sum += gradient->pixels[y][x];
+    }
+
+    if (sum < min_sum) {
+      min_col = x;
+      min_sum = sum;
+    }
+  }
+
+  int x_offset = 0;
+
+  for (int y = 0; y < reduced_im->h; y++) {
+    reduced_im->pixels[y] = malloc(sizeof(int) * reduced_im->w);
+
+    for (int x = 0; x < reduced_im->w; x++) {
+      if (x == min_col) {
+        x_offset = 1;
+      }
+      
+      reduced_im->pixels[y][x] = im->pixels[y][x + x_offset];
+    }
+  }
+
+  free_image(gradient);
+  return reduced_im;
+}
+
+image_t* horizontal_column_shrink(image_t* im, int nb_pixels_removed) {
+  image_t* result = atomic_horizontal_column_shrink(im);
+  image_t* temp = atomic_horizontal_column_shrink(result);
+  free_image(result);
+  result = temp;
+
+  for (int i = 1; i < nb_pixels_removed; i++) {
+    temp = atomic_horizontal_column_shrink(result);
+    free_image(result);
+    result = temp;
+  }
+
+  return result;
+}
