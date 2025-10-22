@@ -81,12 +81,20 @@ void test_all_functions_on(char* image_name, char* result_dir) {
     build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_column_reduction.png"}, 4)
   );
 
-  image_t* greedy_im = horizontal_shrink(im, 50, atomic_horizontal_greedy_shrink);
+  int new_w = im->w * .5;
+  image_t* greedy_im = horizontal_shrink(im, new_w, atomic_horizontal_greedy_shrink);
   image_save(
     greedy_im,
     build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_greedy_reduction.png"}, 4)
   );
 
+  image_t* dp_im = horizontal_shrink(im, new_w, atomic_horizontal_dp_shrink);
+  image_save(
+    dp_im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_dp_reduction.png"}, 4)
+  );
+
+  free_image(dp_im);
   free_image(greedy_im);
   free_image(column_im);
   free_image(naive_im);
@@ -103,37 +111,9 @@ int main() {
   image_t* img = new_image(100, 100);
   image_save(img, "TP_seam_carving/black.png");
 
-  /*
   test_all_functions_on("bird", "bird/");
   test_all_functions_on("broadway_seam", "broadway/");
   test_all_functions_on("boat", "boat/");
-  */
-
-  image_t* bird_low = image_read("TP_seam_carving/bird_low.png");
-  image_t* grad_bird_low = image_gradient(bird_low);
-  image_save(grad_bird_low, "TP_seam_carving/bird_low/gradient_bird_low.png");
-
-  for (int y = 0; y < grad_bird_low->h; y++) {
-    for (int x = 0; x < grad_bird_low->w; x++) {
-      int p = grad_bird_low->pixels[y][x];
-      printf("%d", p);
-      if (p < 10) {
-        printf("   ");
-      } else if (p < 100) {
-        printf("  ");
-      } else {
-        printf(" ");
-      }
-    }
-    printf("\n");
-  }
-
-  path_t* best_dp_path = dp_best_path(grad_bird_low);
-  print_path(best_dp_path, grad_bird_low);
-
-  free_path(best_dp_path);
-  free_image(bird_low);
-  free_image(grad_bird_low);
 
   for (int i = 0; i < char_buffer_cursor; i++) {
     free(char_buffer[i]);

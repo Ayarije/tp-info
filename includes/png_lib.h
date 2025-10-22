@@ -45,5 +45,6 @@ path_t* greedy_best_path(image_t* im);
 image_t* atomic_horizontal_greedy_shrink(image_t* im);
 
 path_t* dp_best_path(image_t* im);
+image_t* atomic_horizontal_dp_shrink(image_t* im);
 
 #endif

@@ -11,6 +11,7 @@
 #include "stb_image_write.h"
 
 #include "png_lib.h"
+#include "array.h"
 
 image_t* new_image(int h, int w){
   image_t* img = malloc(sizeof(image_t));
@@ -444,131 +445,38 @@ image_t* atomic_horizontal_greedy_shrink(image_t* im) {
   return reduced_im;
 }
 
-void build_all_path_that_end_at(
-  path_t* current_path,
-  path_t*** path_list,
-  int* path_list_size,
-  int* path_array_size,
-  int x,
-  int y,
-  image_t* array
-) {
-  // end condition
-  if (y - 1 < 0) { return; }
-
-  // Register all valid top neighbours
-  int* neighbours = malloc(sizeof(int) * 3);
-  int neighbours_count = 0;
-
-  for (int dx = -1; dx <= 1; dx++) {
-    int nx = x + dx;
-    if (nx >= 0 && nx < array->w) {
-      neighbours[neighbours_count++] = nx;
-    }
-  }
-
-  // Clone current path and continue it with the rest of the neighbours
-  for (int i = 1; i < neighbours_count; i++) {
-    if (*path_list_size >= *path_array_size) {
-      *path_list = realloc(*path_list, sizeof(path_t*) * (*path_array_size) * 2);
-      for (int i = *path_array_size; i < (*path_array_size) * 2; i++) {
-        (*path_list)[i] = NULL;
-      }
-      *path_array_size *= 2;
-    }
-
-    path_t* c_path = clone_path(current_path);
-    add_xy_to_path(c_path, neighbours[i], y - 1);
-    (*path_list)[*path_list_size] = c_path;
-    (*path_list_size)++;
-    build_all_path_that_end_at(
-      c_path,
-      path_list,
-      path_list_size,
-      path_array_size,
-      neighbours[i],
-      y - 1,
-      array
-    );
-  }
-
-  // Continue current path with first neighbour
-  add_xy_to_path(current_path, neighbours[0], y - 1);
-  build_all_path_that_end_at(
-    current_path,
-    path_list,
-    path_list_size,
-    path_array_size,
-    neighbours[0],
-    y - 1,
-    array
-  );
-
-  free(neighbours);
-}
-
 path_t* dp_best_path(image_t* im) {
   image_t* gradient = image_gradient(im);
 
-  int path_list_size = 0;
-  int path_array_size = im->w;
-  path_t*** path_list = malloc(sizeof(path_t**));
-  *path_list = calloc(path_array_size, sizeof(path_t*)); // zero-initialize
+  int** cost_matrix = malloc(sizeof(int) * im->h);
+  int** predecessors = malloc(sizeof(int) * im->h);
 
-  for (int x = 0; x < im->w; x++) {
-
-    if (path_list_size >= path_array_size) {
-      *path_list = realloc(*path_list, sizeof(path_t*) * path_array_size * 2);
-      for (int i = path_array_size; i < path_array_size * 2; i++) {
-        (*path_list)[i] = NULL;
-      }
-      path_array_size *= 2;
-    }
-
-    (*path_list)[x] = new_path();
-    path_list_size++;
-    
-    build_all_path_that_end_at(
-      (*path_list)[x],
-      path_list,
-      &path_list_size,
-      &path_array_size,
-      x,
-      gradient->h - 1,
-      gradient
-    );
-  }
-
-  int min_i_path = 0;
-  int min_path_pixels = INT_MAX;
-
-  for (int i = 0; i < path_list_size; i++) {
-    if ((*path_list)[i] == NULL) { continue; }
-
-    int path_pixels = 0;
-
-    for (int j = 0; j < (*path_list)[i]->size; j++) {
-      int px = (*path_list)[i]->x_coords[j];
-      int py = (*path_list)[i]->y_coords[j];
-      path_pixels += gradient->pixels[py][px];
-    }
-
-    if (path_pixels < min_path_pixels) {
-      min_i_path = i;
-    }
-  }
-
-  path_t* best_path = clone_path((*path_list)[min_i_path]);
-
-  for (int i = 0; i < path_list_size; i++) {
-    if ((*path_list)[i] == NULL) { continue; }
-    free_path((*path_list)[i]);
-  }
-  free(*path_list);
-  free(path_list);
   free_image(gradient);
+}
 
-  return best_path;
+image_t* atomic_horizontal_dp_shrink(image_t* im) {
+  path_t* path = dp_best_path(im);
+  image_t* reduced_im = malloc(sizeof(image_t));
+
+  reduced_im->h = im->h;
+  reduced_im->w = im->w - 1;
+
+  reduced_im->pixels = malloc(sizeof(int*) * reduced_im->h);
+
+  for (int y = 0; y < reduced_im->h; y++) {
+    int offset_x = 0;
+    reduced_im->pixels[y] = malloc(sizeof(int) * reduced_im->w);
+
+    for (int x = 0; x < reduced_im->w; x++) {
+      if (x == path->x_coords[y]) {
+        offset_x = 1;
+      }
+      reduced_im->pixels[y][x] = im->pixels[y][x + offset_x];
+    }
+  }
+
+  free_path(path);
+  return reduced_im;
 }
 
 path_t* new_path() {
