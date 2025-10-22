@@ -445,13 +445,74 @@ image_t* atomic_horizontal_greedy_shrink(image_t* im) {
   return reduced_im;
 }
 
+int clamp(int min, int max, int value) {
+  if (value <= min) {
+    return min;
+  } else if (value >= max) {
+    return max;
+  }
+  return value;
+}
+
 path_t* dp_best_path(image_t* im) {
   image_t* gradient = image_gradient(im);
 
-  int** cost_matrix = malloc(sizeof(int) * im->h);
-  int** predecessors = malloc(sizeof(int) * im->h);
+  int** cost_matrix = malloc(sizeof(int*) * im->h);
+  int** predecessors = malloc(sizeof(int*) * im->h);
 
+  for (int y = 0; y < im->h; y++) {
+    cost_matrix[y] = malloc(sizeof(int) * im->w);
+    predecessors[y] = malloc(sizeof(int) * im->w);
+    for (int x = 0; x < im->w; x++) {
+      if (y == 0) {
+        cost_matrix[y][x] = gradient->pixels[y][x];
+        predecessors[y][x] = -1;
+        continue;
+      }
+
+      int best_col = x;
+      int best_value = 256 * (y+1);
+
+      for (int offset_x = -1; offset_x <= 1; offset_x++) {
+        if (offset_x + x < 0 || offset_x + x >= im->w) { continue; }
+
+        int nx = x + offset_x;
+        if (cost_matrix[y - 1][nx] < best_value) {
+          best_value = cost_matrix[y - 1][nx];
+          best_col = nx;
+        }
+      }
+
+      cost_matrix[y][x] = best_value + gradient->pixels[y][x];
+      predecessors[y][x] = best_col;
+    }
+  }
+
+  path_t* best_path = new_path();
+  int curr_x = 0;
+
+  for (int x = 1; x < im->w; x++) {
+    if (cost_matrix[im->h-1][x] < cost_matrix[im->h-1][curr_x]) {
+      curr_x = x;
+    }
+  }
+
+  for (int y = im->h - 1; y >= 0; y--) {
+    add_xy_to_path(best_path, curr_x, y);
+    
+    curr_x = predecessors[y][curr_x];
+  }
+  
+
+  for (int y = 0; y < im->h; y++) {
+    free(cost_matrix[y]);
+    free(predecessors[y]);
+  }
+  free(cost_matrix);
+  free(predecessors);
   free_image(gradient);
+
+  return best_path;
 }
 
 image_t* atomic_horizontal_dp_shrink(image_t* im) {

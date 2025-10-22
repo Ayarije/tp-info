@@ -110,7 +110,7 @@ int main() {
 
   image_t* img = new_image(100, 100);
   image_save(img, "TP_seam_carving/black.png");
-
+  
   test_all_functions_on("bird", "bird/");
   test_all_functions_on("broadway_seam", "broadway/");
   test_all_functions_on("boat", "boat/");
