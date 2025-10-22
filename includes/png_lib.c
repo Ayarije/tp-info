@@ -36,6 +36,37 @@ void free_image(image_t* image){
   free(image);
 }
 
+int count_digits(int n) {
+  int count = 0;
+  while (n > 0) {
+    n /= 10;
+    count++;
+  }
+  return count;
+}
+
+void print_matrices(int** matrix, int w, int h) {
+  int max = -1;
+
+  for (int y = 0; y < h; y++) {
+    for (int x = 0; x < w; x++) {
+      if (matrix[y][x] > max) {
+        max = matrix[y][x];
+      }
+    }
+  }
+
+  int max_digits = count_digits(max);
+
+  for (int y = 0; y < h; y++) {
+    for (int x = 0; x < w; x++) {
+      if (matrix[y][x] > max) {
+        max = matrix[y][x];
+      }
+    }
+  }
+}
+
 image_t* image_read(char *filename){
     int w, h, channels;
     uint8_t *data = stbi_load(filename, &w, &h, &channels, 0);
