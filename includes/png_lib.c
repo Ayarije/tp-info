@@ -316,12 +316,12 @@ image_t* atomic_horizontal_shrink(image_t* im) {
   return reduced_im;
 }
 
-image_t* horizontal_shrink(image_t* im, int nb_pixels_removed) {
-  image_t* result = atomic_horizontal_shrink(im);
+image_t* horizontal_shrink(image_t* im, int nb_pixels_removed, image_t* (*shrink_func)(image_t*)) {
+  image_t* result = shrink_func(im);
   image_t* temp;
 
   for (int i = 1; i < nb_pixels_removed; i++) {
-    temp = atomic_horizontal_shrink(result);
+    temp = shrink_func(result);
     free_image(result);
     result = temp;
   }
@@ -371,17 +371,271 @@ image_t* atomic_horizontal_column_shrink(image_t* im) {
   return reduced_im;
 }
 
-image_t* horizontal_column_shrink(image_t* im, int nb_pixels_removed) {
-  image_t* result = atomic_horizontal_column_shrink(im);
-  image_t* temp = atomic_horizontal_column_shrink(result);
-  free_image(result);
-  result = temp;
+path_t* greedy_best_path(image_t* im) {
+  path_t* best_path = new_path();
+  
+  int min_x = 0;
+  for (int x = 1; x < im->w; x++) {
+    if (im->pixels[0][x] < im->pixels[0][min_x]) {
+      min_x = x;
+    }
+  }
 
-  for (int i = 1; i < nb_pixels_removed; i++) {
-    temp = atomic_horizontal_column_shrink(result);
-    free_image(result);
-    result = temp;
+  add_xy_to_path(best_path, min_x, 0);
+
+  int px = min_x;
+
+  for (int y = 1; y < im->h; y++) {
+    // Get all valid pixels coords and values (if not valid put INT_MAX)
+    int pixels[3];
+    int x_coords[3];
+
+    for (int offset_x = -1; offset_x <= 1; offset_x++) {
+      if (px + offset_x >= 0 && px + offset_x < im->w) {
+        pixels[offset_x + 1] = im->pixels[y][px + offset_x];
+        x_coords[offset_x + 1] = px + offset_x;
+      } else {
+        pixels[offset_x + 1] = INT_MAX;
+        x_coords[offset_x + 1] = INT_MAX;
+      }
+    }
+
+    // Find minimum value
+    min_x = INT_MAX;
+    int min_p = INT_MAX;
+
+    for (int i = 0; i < 3; i++) {
+      if (pixels[i] < min_p) {
+        min_p = pixels[i];
+        min_x = x_coords[i];
+      }
+    }
+
+    // add to path the minimum value
+    add_xy_to_path(best_path, min_x, y);
+    px = min_x;
+  }
+
+  return best_path;
+}
+
+image_t* atomic_horizontal_greedy_shrink(image_t* im) {
+  path_t* path = greedy_best_path(im);
+  image_t* reduced_im = malloc(sizeof(image_t));
+
+  reduced_im->h = im->h;
+  reduced_im->w = im->w - 1;
+
+  reduced_im->pixels = malloc(sizeof(int*) * reduced_im->h);
+
+  for (int y = 0; y < reduced_im->h; y++) {
+    int offset_x = 0;
+    reduced_im->pixels[y] = malloc(sizeof(int) * reduced_im->w);
+
+    for (int x = 0; x < reduced_im->w; x++) {
+      if (x == path->x_coords[y]) {
+        offset_x = 1;
+      }
+      reduced_im->pixels[y][x] = im->pixels[y][x + offset_x];
+    }
+  }
+
+  free_path(path);
+  return reduced_im;
+}
+
+void build_all_path_that_end_at(
+  path_t* current_path,
+  path_t*** path_list,
+  int* path_list_size,
+  int* path_array_size,
+  int x,
+  int y,
+  image_t* array
+) {
+  // end condition
+  if (y - 1 < 0) { return; }
+
+  // Register all valid top neighbours
+  int* neighbours = malloc(sizeof(int) * 3);
+  int neighbours_count = 0;
+
+  for (int dx = -1; dx <= 1; dx++) {
+    int nx = x + dx;
+    if (nx >= 0 && nx < array->w) {
+      neighbours[neighbours_count++] = nx;
+    }
+  }
+
+  // Clone current path and continue it with the rest of the neighbours
+  for (int i = 1; i < neighbours_count; i++) {
+    if (*path_list_size >= *path_array_size) {
+      *path_list = realloc(*path_list, sizeof(path_t*) * (*path_array_size) * 2);
+      for (int i = *path_array_size; i < (*path_array_size) * 2; i++) {
+        (*path_list)[i] = NULL;
+      }
+      *path_array_size *= 2;
+    }
+
+    path_t* c_path = clone_path(current_path);
+    add_xy_to_path(c_path, neighbours[i], y - 1);
+    (*path_list)[*path_list_size] = c_path;
+    (*path_list_size)++;
+    build_all_path_that_end_at(
+      c_path,
+      path_list,
+      path_list_size,
+      path_array_size,
+      neighbours[i],
+      y - 1,
+      array
+    );
+  }
+
+  // Continue current path with first neighbour
+  add_xy_to_path(current_path, neighbours[0], y - 1);
+  build_all_path_that_end_at(
+    current_path,
+    path_list,
+    path_list_size,
+    path_array_size,
+    neighbours[0],
+    y - 1,
+    array
+  );
+
+  free(neighbours);
+}
+
+path_t* dp_best_path(image_t* im) {
+  image_t* gradient = image_gradient(im);
+
+  int path_list_size = 0;
+  int path_array_size = im->w;
+  path_t*** path_list = malloc(sizeof(path_t**));
+  *path_list = calloc(path_array_size, sizeof(path_t*)); // zero-initialize
+
+  for (int x = 0; x < im->w; x++) {
+
+    if (path_list_size >= path_array_size) {
+      *path_list = realloc(*path_list, sizeof(path_t*) * path_array_size * 2);
+      for (int i = path_array_size; i < path_array_size * 2; i++) {
+        (*path_list)[i] = NULL;
+      }
+      path_array_size *= 2;
+    }
+
+    (*path_list)[x] = new_path();
+    path_list_size++;
+    
+    build_all_path_that_end_at(
+      (*path_list)[x],
+      path_list,
+      &path_list_size,
+      &path_array_size,
+      x,
+      gradient->h - 1,
+      gradient
+    );
+  }
+
+  int min_i_path = 0;
+  int min_path_pixels = INT_MAX;
+
+  for (int i = 0; i < path_list_size; i++) {
+    if ((*path_list)[i] == NULL) { continue; }
+
+    int path_pixels = 0;
+
+    for (int j = 0; j < (*path_list)[i]->size; j++) {
+      int px = (*path_list)[i]->x_coords[j];
+      int py = (*path_list)[i]->y_coords[j];
+      path_pixels += gradient->pixels[py][px];
+    }
+
+    if (path_pixels < min_path_pixels) {
+      min_i_path = i;
+    }
+  }
+
+  path_t* best_path = clone_path((*path_list)[min_i_path]);
+
+  for (int i = 0; i < path_list_size; i++) {
+    if ((*path_list)[i] == NULL) { continue; }
+    free_path((*path_list)[i]);
+  }
+  free(*path_list);
+  free(path_list);
+  free_image(gradient);
+
+  return best_path;
+}
+
+path_t* new_path() {
+  path_t* result = malloc(sizeof(path_t));
+
+  result->array_size = 50;
+  result->x_coords = malloc(sizeof(int) * result->array_size);
+  result->y_coords = malloc(sizeof(int) * result->array_size);
+  result->size = 0;
+
+  return result;
+}
+
+path_t* clone_path(path_t* path) {
+  if (!path) { return NULL; }
+
+  path_t* result = malloc(sizeof(path_t));
+
+  result->array_size = path->array_size;
+  result->x_coords = malloc(sizeof(int) * result->array_size);
+  result->y_coords = malloc(sizeof(int) * result->array_size);
+  result->size = path->size;
+
+  for (int i = 0; i < path->size; i++) {
+    result->x_coords[i] = path->x_coords[i];
+    result->y_coords[i] = path->y_coords[i];
   }
 
   return result;
+}
+
+void free_path(path_t* path) {
+  free(path->x_coords);
+  free(path->y_coords);
+  free(path);
+}
+
+void double_array_length(path_t* path) {
+  int* r_x_coords = malloc(sizeof(int) * path->array_size * 2);
+  int* r_y_coords = malloc(sizeof(int) * path->array_size * 2);
+  for (int i = 0; i < path->array_size; i++) {
+    r_x_coords[i] = path->x_coords[i];
+    r_y_coords[i] = path->y_coords[i];
+  }
+  path->array_size *= 2;
+  free(path->x_coords);
+  free(path->y_coords);
+  path->x_coords = r_x_coords;
+  path->y_coords = r_y_coords;
+}
+
+void add_xy_to_path(path_t* path, int x, int y) {
+  if (path->size == path->array_size) {
+    double_array_length(path);
+  }
+  path->x_coords[path->size] = x;
+  path->y_coords[path->size] = y;
+  path->size++;
+}
+
+void print_path(path_t* path, image_t* im) {
+  printf("====[ %p ]====\n", path);
+  int sum = 0;
+  for (int i = 0; i < path->size; i++) {
+    printf("%d / %d\n", path->x_coords[i], path->y_coords[i]);
+    sum += im->pixels[path->y_coords[i]][path->x_coords[i]];
+  }
+  
+  printf("Total : %d\n", sum);
 }
