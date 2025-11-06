@@ -1,0 +1,69 @@
+let q16 =
+  let power a n =
+    let r = 1 in
+    let k = a in
+    let t = n in
+    let rec loop r k t =
+      if t <= 0 then
+        r
+      else if t mod 2 = 0 then
+        loop r (k*k) (t/2)
+      else
+        loop (r*k) k (t-1)
+    in
+    loop r k t
+  in
+  power (58-3) 5;;
+
+let min3 a b c =
+  if a < b && a < c then
+    a
+  else if b < c then
+    b
+  else
+    c;;
+
+let min_of_3 = min3 5 8 1;;
+
+let power a n =
+   let r = 1 in
+   let k = a in
+   let t = n in
+   let rec loop r k t =
+     if t <= 0 then
+       r
+     else if t mod 2 = 0 then
+       loop r (k*k) (t/2)
+     else
+       loop (r*k) k (t-1)
+   in
+   if n >= 0 then
+     float_of_int (loop r k t)
+   else
+     1. /. (float_of_int (loop r k (-t)));;
+
+let neg_n = power 2 (-8);;
+let pos_n = power 2 8;;
+
+let modulo a b =
+  let rec loop a b =
+    if a - b < 0 then
+      a
+    else
+      loop (a-b) b
+  in
+  loop a b;;
+
+let mod19_5 = modulo 19 5;;
+
+let gcd a b =
+  let rec loop a b =
+    if a mod b = 0 then
+      b
+    else
+      loop (a/b) (a mod b)
+  in
+  loop b a;;
+
+let cd = gcd 255 141;;
+    
