@@ -1,6 +1,8 @@
 #ifndef PNG_LIB_H
 #define PNG_LIB_H
 
+#include "matrices.h"
+
 struct image_s {
   int h;
   int w;
@@ -25,10 +27,13 @@ void add_xy_to_path(path_t* path, int x, int y);
 void print_path(path_t* path, image_t* im);
 
 image_t* new_image(int h, int w);
+image_t* new_image_from_matrix(matrix* mat);
 void free_image(image_t* image);
 
 image_t* image_read(char *filename);
 void image_save(image_t *im, char *filename);
+
+matrix* get_matrix_from_im(image_t* im);
 
 void horizontal_flip(image_t* im);
 void vertical_flip(image_t* im);
@@ -38,7 +43,6 @@ image_t* subsampling(image_t* im, double factor);
 
 image_t* image_gradient(image_t* im);
 image_t* atomic_horizontal_shrink(image_t* im);
-image_t* horizontal_shrink(image_t* im, int nb_pixels_removed, image_t* (*shrink_func)(image_t*));
 image_t* atomic_horizontal_column_shrink(image_t* im);
 
 path_t* greedy_best_path(image_t* im);
@@ -46,5 +50,9 @@ image_t* atomic_horizontal_greedy_shrink(image_t* im);
 
 path_t* dp_best_path(image_t* im);
 image_t* atomic_horizontal_dp_shrink(image_t* im);
+image_t* atomic_vertical_dp_shrink(image_t* im);
+
+image_t* horizontal_shrink(image_t* im, int nb_pixels_removed, image_t* (*shrink_func)(image_t*));
+image_t* shrink(image_t* im, double factor);
 
 #endif

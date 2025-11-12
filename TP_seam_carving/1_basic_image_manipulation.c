@@ -1,5 +1,6 @@
 #include <png_lib.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "string.h"
 
@@ -94,6 +95,13 @@ void test_all_functions_on(char* image_name, char* result_dir) {
     build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_dp_reduction.png"}, 4)
   );
 
+  image_t* final_im = shrink(im, .5);
+  image_save(
+    final_im,
+    build_path((char*[]) {"TP_seam_carving/", result_dir, image_name, "_final_reduction.png"}, 4)
+  );
+
+  free_image(final_im);
   free_image(dp_im);
   free_image(greedy_im);
   free_image(column_im);
@@ -112,9 +120,9 @@ int main() {
   image_save(img, "TP_seam_carving/black.png");
   
   
-  // test_all_functions_on("bird", "bird/");
-  // test_all_functions_on("broadway_seam", "broadway/");
-  // test_all_functions_on("boat", "boat/");
+  test_all_functions_on("bird", "bird/");
+  test_all_functions_on("broadway_seam", "broadway/");
+  test_all_functions_on("boat", "boat/");
   
   image_t* bird_low = image_read("TP_seam_carving/bird_low.png");
   image_t* grad_bird_low = image_gradient(bird_low);
@@ -134,7 +142,7 @@ int main() {
     }
     printf("\n");
   }
-  path_t* best_dp_path = dp_best_path(grad_bird_low);
+  path_t* best_dp_path = dp_best_path(bird_low);
   print_path(best_dp_path, grad_bird_low);
   free_path(best_dp_path);
   free_image(bird_low);

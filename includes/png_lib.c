@@ -11,7 +11,7 @@
 #include "stb_image_write.h"
 
 #include "png_lib.h"
-#include "array.h"
+#include "matrices.h"
 
 image_t* new_image(int h, int w){
   image_t* img = malloc(sizeof(image_t));
@@ -34,37 +34,6 @@ void free_image(image_t* image){
   }
   free(image->pixels);
   free(image);
-}
-
-int count_digits(int n) {
-  int count = 0;
-  while (n > 0) {
-    n /= 10;
-    count++;
-  }
-  return count;
-}
-
-void print_matrices(int** matrix, int w, int h) {
-  int max = -1;
-
-  for (int y = 0; y < h; y++) {
-    for (int x = 0; x < w; x++) {
-      if (matrix[y][x] > max) {
-        max = matrix[y][x];
-      }
-    }
-  }
-
-  int max_digits = count_digits(max);
-
-  for (int y = 0; y < h; y++) {
-    for (int x = 0; x < w; x++) {
-      if (matrix[y][x] > max) {
-        max = matrix[y][x];
-      }
-    }
-  }
 }
 
 image_t* image_read(char *filename){
@@ -476,28 +445,19 @@ image_t* atomic_horizontal_greedy_shrink(image_t* im) {
   return reduced_im;
 }
 
-int clamp(int min, int max, int value) {
-  if (value <= min) {
-    return min;
-  } else if (value >= max) {
-    return max;
-  }
-  return value;
-}
-
 path_t* dp_best_path(image_t* im) {
   image_t* gradient = image_gradient(im);
 
-  int** cost_matrix = malloc(sizeof(int*) * im->h);
-  int** predecessors = malloc(sizeof(int*) * im->h);
+  matrix* cost_matrix = matrix_create(im->w, im->h, sizeof(int));
+  matrix* predecessors = matrix_create(im->w, im->h, sizeof(int));
+
+  const int empty_pred = -1;
 
   for (int y = 0; y < im->h; y++) {
-    cost_matrix[y] = malloc(sizeof(int) * im->w);
-    predecessors[y] = malloc(sizeof(int) * im->w);
     for (int x = 0; x < im->w; x++) {
       if (y == 0) {
-        cost_matrix[y][x] = gradient->pixels[y][x];
-        predecessors[y][x] = -1;
+        matrix_set(cost_matrix, x, y, &gradient->pixels[y][x]);
+        matrix_set(predecessors, x, y, &empty_pred);
         continue;
       }
 
@@ -507,23 +467,29 @@ path_t* dp_best_path(image_t* im) {
       for (int offset_x = -1; offset_x <= 1; offset_x++) {
         if (offset_x + x < 0 || offset_x + x >= im->w) { continue; }
 
-        int nx = x + offset_x;
-        if (cost_matrix[y - 1][nx] < best_value) {
-          best_value = cost_matrix[y - 1][nx];
-          best_col = nx;
+        int mat_value = *(int*)matrix_get(cost_matrix, x + offset_x, y - 1);
+
+        if (mat_value < best_value) {
+          best_value = mat_value;
+          best_col = x + offset_x;
         }
       }
 
-      cost_matrix[y][x] = best_value + gradient->pixels[y][x];
-      predecessors[y][x] = best_col;
+      int new_cost = best_value + gradient->pixels[y][x];
+      matrix_set(cost_matrix, x, y, &new_cost);
+      matrix_set(predecessors, x, y, &best_col);
     }
   }
 
   path_t* best_path = new_path();
   int curr_x = 0;
+  const int last_y = matrix_get_height(cost_matrix) - 1;
 
   for (int x = 1; x < im->w; x++) {
-    if (cost_matrix[im->h-1][x] < cost_matrix[im->h-1][curr_x]) {
+    int min_mat_value = *(int*)matrix_get(cost_matrix, curr_x, last_y);
+    int mat_value = *(int*)matrix_get(cost_matrix, x, last_y);
+
+    if (mat_value < min_mat_value) {
       curr_x = x;
     }
   }
@@ -531,16 +497,11 @@ path_t* dp_best_path(image_t* im) {
   for (int y = im->h - 1; y >= 0; y--) {
     add_xy_to_path(best_path, curr_x, y);
     
-    curr_x = predecessors[y][curr_x];
+    curr_x = *(int*)matrix_get(predecessors, curr_x, y);
   }
   
-
-  for (int y = 0; y < im->h; y++) {
-    free(cost_matrix[y]);
-    free(predecessors[y]);
-  }
-  free(cost_matrix);
-  free(predecessors);
+  matrix_destroy(predecessors);
+  matrix_destroy(cost_matrix);
   free_image(gradient);
 
   return best_path;
@@ -569,6 +530,30 @@ image_t* atomic_horizontal_dp_shrink(image_t* im) {
 
   free_path(path);
   return reduced_im;
+}
+
+matrix* get_matrix_from_im(image_t* im) {
+  matrix* result = matrix_create(im->w, im->h, sizeof(int));
+
+  for (int y = 0; y < im->h; y++) {
+    for (int x = 0; x < im->w; x++) {
+      matrix_set(result, x, y, &im->pixels[y][x]);
+    }
+  }
+
+  return result;
+}
+
+image_t* new_image_from_matrix(matrix* mat) {
+  image_t* result = new_image(matrix_get_height(mat), matrix_get_width(mat));
+
+  for (int y = 0; y < result->h; y++) {
+    for (int x = 0; x < result->w; x++) {
+      result->pixels[y][x] = *(int*)matrix_get(mat, x, y);
+    }
+  }
+
+  return result;
 }
 
 path_t* new_path() {
@@ -638,4 +623,64 @@ void print_path(path_t* path, image_t* im) {
   }
   
   printf("Total : %d\n", sum);
+}
+
+image_t* atomic_vertical_dp_shrink(image_t* im) {
+  matrix* im_mat = get_matrix_from_im(im);
+  matrix* rotated_mat = matrix_rotate_90_right(im_mat);
+
+  image_t* rotated_im = new_image_from_matrix(rotated_mat);
+  image_t* rotated_result = atomic_horizontal_dp_shrink(rotated_im);
+
+  matrix* rotated_result_mat = get_matrix_from_im(rotated_result);
+  matrix* result_mat = matrix_rotate_90_left(rotated_result_mat);
+
+  image_t* result = new_image_from_matrix(result_mat);
+
+  free_image(rotated_im);
+  free_image(rotated_result);
+  matrix_destroy(im_mat);
+  matrix_destroy(rotated_mat);
+  matrix_destroy(rotated_result_mat);
+  matrix_destroy(result_mat);
+  
+  return result;
+}
+
+image_t* shrink(image_t* im, double factor) {
+  if (factor >= 1) { 
+    printf("Error: you can only shrink images (factor > 1)");
+    return NULL;
+  }
+
+  int new_w = im->w*factor;
+  int new_h = im->h*factor;
+  
+  image_t* result = atomic_vertical_dp_shrink(im);
+  image_t* temp;
+
+  int nb_pixels_to_remove_width = im->w - new_w;
+  int nb_pixels_to_remove_height = im->w - new_w;
+
+  for (int i = 0; i < nb_pixels_to_remove_height + nb_pixels_to_remove_width; i++) {
+    if (i/2 > nb_pixels_to_remove_height) {
+      temp = result;
+      result = atomic_horizontal_dp_shrink(result);
+      free_image(temp);
+    } else if (i/2 > nb_pixels_to_remove_width) {
+      temp = result;
+      result = atomic_vertical_dp_shrink(result);
+      free_image(temp);
+    } else if (i%2 == 1) {
+      temp = result;
+      result = atomic_vertical_dp_shrink(result);
+      free_image(temp);
+    } else {
+      temp = result;
+      result = atomic_horizontal_dp_shrink(result);
+      free_image(temp);
+    }
+  }
+
+  return result;
 }
