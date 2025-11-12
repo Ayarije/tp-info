@@ -2,4 +2,5 @@
 *.d
 *.o
 *.cmi
+*.cmx
 temp.txt
