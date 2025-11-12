@@ -1,4 +1,5 @@
 /*/build/
 *.d
 *.o
+*.cmi
 temp.txt
