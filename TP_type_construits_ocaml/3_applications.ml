@@ -50,4 +50,7 @@ let e_value = evaluate e;;
 
 let rec sum_operator k n a =
   let e = a k in
-  match e with
+  match k with
+  |k when k = n -> e
+  |_ -> Sum(e, sum_operator (k+1) n a);;
+
