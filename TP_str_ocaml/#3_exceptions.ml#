@@ -1,0 +1,12 @@
+let div a b =
+  try
+    (float_of_int a) /. (float_of_int b)
+  with
+  | Division_by_zero -> 0.;;
+
+let rec sum_invert int_lst =
+  match int_lst with
+  | hd::tl when tl = [] -> div 1 hd
+  | hd::tl -> div 1 hd +. sum_invert tl;;
+  
+let invert = sum_invert [5; 6; 8; 1; 2; 3; 4];;
