@@ -26,3 +26,6 @@ let lst_str = string_to_list str 0;;
 let str_str = list_to_string lst_str;;
 
 let world = String.sub str 6 5;;
+
+int_of_char 'a';;
+int_of_char 'z';;
