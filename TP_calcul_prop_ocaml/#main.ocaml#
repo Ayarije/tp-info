@@ -1,0 +1,1 @@
+type formula = Var of int | Not of formula  | 
