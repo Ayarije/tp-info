@@ -104,8 +104,8 @@ let rec generate_all_valuations var_lst incr =
   | i when i >= threshold -> []
   | i -> (gen_val var_lst (bin_of_int i len))::(generate_all_valuations var_lst (i + 1));;
 
-let f1_vals = generate_all_valuation f1_var_lst 0;;
-let f2_vals = generate_all_valuation f2_var_lst 0;;
+let f1_vals = generate_all_valuations f1_var_lst 0;;
+let f2_vals = generate_all_valuations f2_var_lst 0;;
 
 let is_satisfiable formula =
   let f_vals = generate_all_valuations (variable_list formula) 0 in
@@ -134,6 +134,135 @@ let is_Bot_ant = is_contradiction Bot;;
 
 let rec subformulas formula =
   match formula with
+  | Var(id)        -> [Var(id)]
+  | Top            -> [Top]
+  | Bot            -> [Bot]
+  | Not(f)         -> Not(f)::(subformulas f)
+  | And(f1, f2)    -> (And(f1, f2)::(subformulas f1))@(subformulas f2)
+  | Or(f1, f2)     -> (Or(f1, f2)::(subformulas f1))@(subformulas f2)
+  | Imply(f1, f2)  -> (Imply(f1, f2)::(subformulas f1))@(subformulas f2);;
+
+let f1_sub = subformulas f1;;
+let f2_sub = subformulas f2;;
+
+let rec simplify formula =
+  match formula with
   | Var(id) -> Var(id)
-  | Top -> Top
-  | Bot -> Bot
+  | Top     -> Top
+  | Bot     -> Bot
+  | Not(f)  ->
+     (match f with
+     | Top    -> Bot
+     | Bot    -> Top
+     | f      -> simplify f)
+  | And(f1, f2) ->
+     (match f1, f2 with
+     | f, Top -> simplify f
+     | Top, f -> simplify f
+     | f, Bot -> Bot
+     | Bot, f -> Bot
+     | f1, f2 -> And(simplify f1, simplify f2))
+  | Or(f1, f2) ->
+     (match f1, f2 with
+     | f, Top -> Top
+     | Top, f -> Top
+     | f, Bot -> simplify f
+     | Bot, f -> simplify f
+     | f1, f2 -> Or(simplify f1, simplify f2))
+   | Imply(f1, f2) ->
+     (match f1, f2 with
+     | Top, f -> simplify f
+     | Bot, f -> Top
+     | f1, f2 -> Imply(simplify f1, simplify f2));;
+
+let f1_simple = simplify f1;;
+let f2_simple = simplify f2;;
+
+let is_tautology formula =
+  let f_vals = generate_all_valuations (variable_list formula) 0 in
+  let rec go_through_vals vals =
+    match vals with
+    | [] -> true
+    | valuation::tail ->
+       if evaluate valuation formula then
+         go_through_vals tail
+       else
+         false
+  in
+  go_through_vals f_vals;;
+
+let f1_tau = is_tautology f1;;
+let f2_tau = is_tautology f2;;
+let top_tau = is_tautology Top;;
+let bot_tau = is_tautology Bot;;
+
+let are_equivalent f1 f2 =
+  let rec go_through_vals f1_vals f2_vals =
+    match f1_vals, f2_vals with
+    | [], [] -> true
+    | val1::tl1, val2::tl2 ->
+       if evaluate val1 f1 = evaluate val2 f2 then
+         go_through_vals tl1 tl2
+       else
+         false
+  in
+  let f1_var_list = variable_list f1 in
+  let f2_var_list = variable_list f2 in
+  if List.length f1_var_list <> List.length f2_var_list then
+    false
+  else
+    let f1_vals = generate_all_valuations f1_var_list 0 in
+    let f2_vals = generate_all_valuations f2_var_list 0 in
+    go_through_vals f1_vals f2_vals;;
+
+let is_f1_f2_eq = are_equivalent f1 f2;;
+
+let rec substitute old_f var sub_f =
+  let sub v old_f = substitute old_f v sub_f in
+  match old_f with
+  | Var(id)        -> if var = id then sub_f else Var(id)
+  | Top            -> Top
+  | Bot            -> Bot
+  | Not(f)         -> Not(sub var f)
+  | And(f1, f2)    -> And(sub var f1, sub var f2)
+  | Or(f1, f2)     -> Or(sub var f1, sub var f2)
+  | Imply(f1, f2)  -> Imply(sub var f1, sub var f2)
+
+let substituted_f1 = substitute f1 4 Bot;;
+
+let rec sprint_top_line var_list =
+  match var_list with
+  | [] -> "| f |"
+  | var::tl ->
+     (Printf.sprintf "| %d " var) ^ (sprint_top_line tl);;
+
+let rec sprint_sep var_list =
+  match var_list with
+  | [] -> "----"
+  | var::tl -> "----" ^ (sprint_sep tl);;
+
+let rec sprint_line v f val_f =
+  match v with
+  | [] -> Printf.sprintf "| %d |" (if val_f then 1 else 0)
+  | (var, v_val)::tl ->
+     (Printf.sprintf "| %d " (if v_val then 1 else 0)) ^ (sprint_line tl f val_f);;
+
+let rec sprint_truth_lines vals f =
+  match vals with
+  | [] -> ""
+  | v::tl ->
+     (sprint_line v f (evaluate v f)) ^ "\n" ^ sprint_truth_lines tl f;;
+
+let print_truth_table formula =
+  let f_vars = variable_list formula in
+  let f_vals = generate_all_valuations f_vars 0 in
+  let top_line = sprint_top_line f_vars in
+  let sep_line = sprint_sep f_vars in
+  let truth_table = sprint_truth_lines f_vals formula in
+  print_string (top_line ^ "\n" ^ sep_line ^ "\n" ^ truth_table);;
+
+let f3 = Or(Or(Imply(Var(6), Var(5)), And(Var(3), Or(Var(4), Var(2)))), And(Var(1), Var(5)));;
+
+let _ = print_truth_table f1;;
+let _ = print_truth_table f2;;
+let _ = print_truth_table f3;;
