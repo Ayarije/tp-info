@@ -254,15 +254,119 @@ let rec sprint_truth_lines vals f =
      (sprint_line v f (evaluate v f)) ^ "\n" ^ sprint_truth_lines tl f;;
 
 let print_truth_table formula =
-  let f_vars = variable_list formula in
+  let f_vars = List.sort compare (variable_list formula) in
   let f_vals = generate_all_valuations f_vars 0 in
   let top_line = sprint_top_line f_vars in
   let sep_line = sprint_sep f_vars in
   let truth_table = sprint_truth_lines f_vals formula in
   print_string (top_line ^ "\n" ^ sep_line ^ "\n" ^ truth_table);;
 
-let f3 = Or(Or(Imply(Var(6), Var(5)), And(Var(3), Or(Var(4), Var(2)))), And(Var(1), Var(5)));;
+let rec sprint_formula formula =
+  match formula with
+  | Var(id)        -> Printf.sprintf "p%d" id
+  | Top            -> "⊤"
+  | Bot            -> "⊥"
+  | Not(f)         -> "¬(" ^ (sprint_formula f) ^ ")"
+  | And(f1, f2)    -> "(" ^ (sprint_formula f1) ^ "∧" ^ (sprint_formula f2) ^ ")"
+  | Or(f1, f2)     -> "(" ^ (sprint_formula f1) ^ "∨" ^ (sprint_formula f2) ^ ")"
+  | Imply(f1, f2)  -> "(" ^ (sprint_formula f1) ^ "⇒" ^ (sprint_formula f2) ^ ")";;
 
+exception GettingFromUnknownConstructor
+
+let rec sprint_formula formula =
+  let rec sprint_associative formula sep is_op get_f =
+     let rec_f f = sprint_associative f sep is_op get_f in
+     match formula with
+     | f when is_op f ->
+        let f1, f2 = get_f f in
+        (rec_f f1) ^ sep ^ (rec_f f2)
+     | f -> sprint_formula f
+  in
+  match formula with
+  | Var(id)        -> Printf.sprintf "p%d" id
+  | Top            -> "⊤"
+  | Bot            -> "⊥"
+  | Not(f)         -> "¬" ^ (sprint_formula f)
+  | And(f1, f2)    ->
+     "(" ^ (sprint_associative formula "∧"
+       (fun x -> match x with And(f1, f2) -> true | _ -> false)
+       (fun x -> match x with And(f1, f2) -> (f1, f2) | _ -> raise GettingFromUnknownConstructor)) ^ ")"
+  | Or(f1, f2)     ->
+     "(" ^ (sprint_associative formula "∨"
+       (fun x -> match x with Or(f1, f2) -> true | _ -> false)
+       (fun x -> match x with Or(f1, f2) -> (f1, f2) | _ -> raise GettingFromUnknownConstructor)) ^ ")"
+  | Imply(f1, f2)  -> "(" ^ (sprint_formula f1) ^ "⇒" ^ (sprint_formula f2) ^ ")";;
+
+let print_formula formula =
+  print_string (sprint_formula formula);;
+
+let f3 = Or(Or(Imply(Var(6), Var(5)), And(Var(3), Or(Var(4), Var(2)))), And(Var(1), Var(5)));;
+let f4 = And(Or(Imply(Not(Var(1)), Var(2)), Not(Or(Var(3), Var(4)))), And(Var(5), And(Var(6), Var(7))));;
+
+let _ = print_formula f1;;
 let _ = print_truth_table f1;;
+
+let _ = print_formula f2;;
 let _ = print_truth_table f2;;
+
+let _ = print_formula f3;;
 let _ = print_truth_table f3;;
+
+let _ = print_formula f4;;
+let _ = print_truth_table f4;;
+
+type quine_tree =
+  | Node of string * quine_tree * quine_tree
+  | Leaf of string;;
+
+let rec print_tree prefix is_left = function
+  | Leaf value ->
+     (* On affiche la valeur actuelle *)
+      Printf.printf "%s" prefix;
+      Printf.printf "%s" (if is_left then "├── " else "└── ");
+      Printf.printf "%s\n" value; (* Changez %d si votre arbre n'est pas des entiers *)
+  | Node(value, left, right) ->
+      (* On affiche la valeur actuelle *)
+      Printf.printf "%s" prefix;
+      Printf.printf "%s" (if is_left then "├── " else "└── ");
+      Printf.printf "%s\n" value; (* Changez %d si votre arbre n'est pas des entiers *)
+
+      (* On prépare le préfixe pour les enfants *)
+      let new_prefix = prefix ^ (if is_left then "│   " else "    ") in
+      
+      (* Appel récursif *)
+      print_tree new_prefix true left;
+      print_tree new_prefix false right
+
+let rec get_first_var formula =
+  match formula with
+  | Var(id) -> id
+  | Top -> -1
+  | Bot -> -1
+  | Not(f) -> get_first_var f
+  | And(f1, f2) -> max (get_first_var f1) (get_first_var f2)
+  | Or(f1, f2) -> max (get_first_var f1) (get_first_var f2)
+  | Imply(f1, f2) -> max (get_first_var f1) (get_first_var f2);;
+
+let rec build_quine_tree formula =
+  let var = get_first_var formula in
+  if var = -1 then
+    Leaf (sprint_formula formula)
+  else
+    Node(
+        sprint_formula formula,
+        build_quine_tree (simplify (substitute formula var Top)),
+        build_quine_tree (simplify (substitute formula var Bot))
+      );;
+
+let f1_quine_tree = build_quine_tree f1;;
+let _ = print_tree "" false f1_quine_tree;;
+
+let f2_quine_tree = build_quine_tree f2;;
+let _ = print_tree "" false f2_quine_tree;;
+
+let f3_quine_tree = build_quine_tree f3;;
+let _ = print_tree "" false f3_quine_tree;;
+
+let f4_quine_tree = build_quine_tree f4;;
+let _ = print_tree "" false f4_quine_tree;;
