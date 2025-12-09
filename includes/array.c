@@ -32,15 +32,16 @@ void a_set(array_t* a, int index, const void* value) {
     memcpy((char*)a->array + index * a->elem_size, value, a->elem_size);
 }
 
-void a_get(array_t* a, int index, void* out_value) {
-    if (!out_value) return;
+int a_get(array_t* a, int index, void* out_value) {
+    if (!out_value) return 0;
     if (!a || index < 0 || index >= a->length) {
         /* on error, zero the destination so callers don't keep previous/garbage value */
         size_t n = a ? a->elem_size : sizeof(void*);
         memset(out_value, 0, n);
-        return;
+        return 0;
     }
     memcpy(out_value, (char*)a->array + index * a->elem_size, a->elem_size);
+    return 1;
 }
 
 void a_push(array_t* a, const void* value) {

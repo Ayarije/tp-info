@@ -321,20 +321,15 @@ type quine_tree =
 
 let rec print_tree prefix is_left = function
   | Leaf value ->
-     (* On affiche la valeur actuelle *)
       Printf.printf "%s" prefix;
       Printf.printf "%s" (if is_left then "├── " else "└── ");
-      Printf.printf "%s\n" value; (* Changez %d si votre arbre n'est pas des entiers *)
+      Printf.printf "%s\n" value;
   | Node(value, left, right) ->
-      (* On affiche la valeur actuelle *)
       Printf.printf "%s" prefix;
       Printf.printf "%s" (if is_left then "├── " else "└── ");
-      Printf.printf "%s\n" value; (* Changez %d si votre arbre n'est pas des entiers *)
+      Printf.printf "%s\n" value;
 
-      (* On prépare le préfixe pour les enfants *)
       let new_prefix = prefix ^ (if is_left then "│   " else "    ") in
-      
-      (* Appel récursif *)
       print_tree new_prefix true left;
       print_tree new_prefix false right
 
