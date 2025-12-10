@@ -3,27 +3,37 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stddef.h>
+#include <string.h>
 
-#include "vector.h"
+#include "array.h"
 
 struct dict_s;
 
 typedef struct dict_s {
-    Vector** keys;
-    int* values;
+    array_t* keys;
+    size_t key_size;
+    array_t* values;
+    size_t value_size;
     int size;
+
+    char* (*print_key)(void*);
+    char* (*print_val)(void*);
 } dict_t;
 
-dict_t* InitDict();
+dict_t* InitDict(
+    size_t key_size,
+    size_t value_size
+);
 void DestroyDict(dict_t* d);
 dict_t* CopyDict(dict_t* d);
 
-void d_put(dict_t* d, Vector* key, int value);
-void d_delete(dict_t* d, Vector* key);
+int d_put(dict_t* d, const void* key, const void* value);
+int d_delete(dict_t* d, const void* key);
 
-int d_get(dict_t* d, Vector* key);
-void d_set(dict_t* d, Vector* key, int value);
-int d_contains(dict_t* d, Vector* key);
+int d_get(dict_t* d, const void* key, void* out_value);
+int d_set(dict_t* d, const void* key, const void* value);
+int d_contains(dict_t* d, const void* key);
 
 void d_print(dict_t* d);
 

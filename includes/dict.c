@@ -1,12 +1,16 @@
 #include "dict.h"
 
-
-dict_t* InitDict() {
+dict_t* InitDict(size_t key_size, size_t value_size) {
     dict_t* dict = (dict_t*) malloc(sizeof(dict_t));
 
-    dict->keys = (Vector**) malloc(0);
-    dict->values = (int*) malloc(0);
+    dict->keys = InitEmptyArray(key_size);
+    dict->key_size = key_size;
+    dict->values = InitEmptyArray(value_size);
+    dict->value_size = value_size;
     dict->size = 0;
+
+    dict->print_key = NULL;
+    dict->print_val = NULL;
 
     return dict;
 }
@@ -14,102 +18,80 @@ dict_t* InitDict() {
 dict_t* CopyDict(dict_t* d) {
     dict_t* new_d = (dict_t*) malloc(sizeof(dict_t));
 
-    new_d->keys = (Vector**) malloc(sizeof(Vector) * d->size);
-    new_d->values = (int*) malloc(sizeof(int) * d->size);
+    new_d->keys = CopyArray(d->keys);
+    new_d->values = CopyArray(d->values);
     new_d->size = d->size;
-
-    for (int i = 0; i < new_d->size; i++) {
-        new_d->keys[i] = CopyVector(d->keys[i]);
-        new_d->values[i] = d->values[i];
-    }
+    new_d->key_size = d->key_size;
+    new_d->value_size = d->value_size;
 
     return new_d;
 }
 
 void DestroyDict(dict_t* d) {
-    for (int i = 0; i < d->size; i++) {
-        DestroyVector(d->keys[i]);
-    }
-    free(d->keys);
-    free(d->values);
+    DestroyArray(d->keys);
+    DestroyArray(d->values);
     free(d);
 }
 
-void d_put(dict_t* d, Vector* key, int value) {
-    for (int i = 0; i < d->size; i++) {
-        if (v_cmp(key, d->keys[i])) { return; }
-    }
+int d_put(dict_t* d, const void* key, const void* value) {
+    if (a_search(d->keys, value) != -1) return 0;
 
-    Vector** r_keys = (Vector**) malloc(sizeof(Vector) * (d->size + 1));
-    int* r_values = (int*) malloc(sizeof(int) * (d->size + 1));
+    a_push(d->keys, key);
+    a_push(d->values, value);
 
-    for (int i = 0; i < d->size; i++) {
-        r_keys[i] = d->keys[i];
-        r_values[i] = d->values[i];
-    }
-    r_keys[d->size] = key;
-    r_values[d->size] = value;
-
-    free(d->keys);
-    free(d->values);
-
-    d->keys = r_keys;
-    d->values = r_values;
     d->size++;
+    return 1;
 }
 
-void d_delete(dict_t* d, Vector* key) {
-    Vector** r_keys = (Vector**) malloc(sizeof(Vector) * (d->size - 1));
-    int* r_values = (int*) malloc(sizeof(int) * (d->size - 1));
+int d_delete(dict_t* d, const void* key) {
+    int index = a_search(d->keys, key);
+    if (index == -1) return 0;
 
-    int c = 0;
-    for (int i = 0; i < d->size - 1; i++) {
-        if (v_cmp(key, d->keys[i])) {
-            c = -1;
-            continue;
-        }
-        r_keys[i + c] = d->keys[i];
-        r_values[i + c] = d->values[i];
-    }
+    a_remove(d->keys, index);
 
-    free(d->keys);
-    free(d->values);
-
-    d->keys = r_keys;
-    d->values = r_values;
     d->size--;
+    return 1;
 }
 
-int d_get(dict_t* d, Vector* key) {
-    for (int i = 0; i < d->size; i++) {
-        if (!v_cmp(key, d->keys[i])) { continue; }
+int d_get(dict_t* d, const void* key, void* out_value) {
+    int index = a_search(d->keys, key);
+    if (index == -1) return 0;
 
-        return d->values[i];
-    }
-    return NULL;
+    a_get(d->values, index, out_value);
+    return 1;
 }
 
-void d_set(dict_t* d, Vector* key, int value) {
-    for (int i = 0; i < d->size; i++) {
-        if (!v_cmp(key, d->keys[i])) { continue; }
+int d_set(dict_t* d, const void* key, const void* value) {
+    int index = a_search(d->keys, key);
+    if (index == -1) return 0;
 
-        d->values[i] = value;
-    }
+    a_set(d->values, index, value);
+    return 1;
 }
 
-int d_contains(dict_t* d, Vector* key) {
-    for (int i = 0; i < d->size; i++) {
-        if (v_cmp(key, d->keys[i])) { return 1; }
-    }
-    return 0;
+int d_contains(dict_t* d, const void* key) {
+    return a_search(d->keys, key) != -1;
 }
 
 void d_print(dict_t* d) {
+    printf("{\n");
     for (int i = 0; i < d->size; i++) {
-        printf("[");
-        for (int j = 0; j < d->keys[i]->length - 1; j++) {
-            printf("%d ", *v_get(d->keys[i], j));
+        void* key;
+        void* val;
+
+        a_get(d->keys, i, key);
+        a_get(d->values, i, val);
+
+        if (d->print_key == NULL) {
+            printf("  %p: ", key);
+        } else {
+            printf("  %s: ", d->print_key(key));
         }
-        printf("%d] : %d\n", *v_get(d->keys[i], d->keys[i]->length-1), d->values[i]);
+        if (d->print_val == NULL) {
+            printf("%p,\n", val);
+        } else {
+            printf("%s,\n", d->print_val(val));
+        }
     }
+    printf("}\n");
 }
