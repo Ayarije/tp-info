@@ -22,7 +22,6 @@ int read_next(int* out) {
     }
     return 1;
 }
-
 int read_index(int index, int* out) {
     if (!a_get(memory, index, out)) {
         printf("\nError: memory overflow from read index at %d\n", index);
@@ -31,14 +30,12 @@ int read_index(int index, int* out) {
     }
     return 1;
 }
-
 int read_value_at_next(int* out) {
     int addr = 0;
     if (!read_next(&addr)) return 0;
     if (!read_index(addr, out)) return 0;
     return 1;
 }
-
 void operation(int (*op)(int, int)) {
     int a = 0;
     int b = 0;
@@ -62,7 +59,6 @@ void copy() {
 
     a_set(memory, b_addr, &a);
 }
-
 void conditional_jump() {
     int condition = 0;
     int target = 0;
@@ -71,7 +67,6 @@ void conditional_jump() {
 
     cursor = target;
 }
-
 void read_int() {
     int addr = 0;
     int val = 0;
@@ -81,7 +76,6 @@ void read_int() {
 
     a_set(memory, addr, &val);
 }
-
 void print_int() {
     int val = 0;
     if (!read_value_at_next(&val)) {
@@ -90,7 +84,6 @@ void print_int() {
 
     printf("%d\n", val);
 }
-
 int convert_int_to_ascii(int i, char* out) {
     if (i < 0 || i > 127) {
         printf("\nError: Unknown char %d", i);
@@ -101,7 +94,6 @@ int convert_int_to_ascii(int i, char* out) {
     *out = (char) i;
     return 1;
 }
-
 void print_char() {
     int char_id = 0;
     if (!read_value_at_next(&char_id)) return;
@@ -131,16 +123,19 @@ int load_instruction(array_t* t_mem, dict_t* vars, char** instructions) {
         a_push(t_mem, &code);
         a_push(t_mem, &instructions[1]);
         a_push(t_mem, &instructions[2]);
+        a_push(t_mem, &instructions[3]);
     } else if (strcmp(code, "MUL") == 0) {
         char* code = "2";
         a_push(t_mem, &code);
         a_push(t_mem, &instructions[1]);
         a_push(t_mem, &instructions[2]);
+        a_push(t_mem, &instructions[3]);
     } else if (strcmp(code, "SUB") == 0) {
         char* code = "3";
         a_push(t_mem, &code);
         a_push(t_mem, &instructions[1]);
         a_push(t_mem, &instructions[2]);
+        a_push(t_mem, &instructions[3]);
     } else if (strcmp(code, "CPY") == 0) {
         char* code = "4";
         a_push(t_mem, &code);
@@ -171,17 +166,114 @@ int load_instruction(array_t* t_mem, dict_t* vars, char** instructions) {
     }
 }
 
-int load_temp_memory(array_t* t_mem, dict_t* vars) {
-    int mem_size = 2*t_mem->length + 2;
+int is_in_vars(dict_t* vars, char* v_name) {
+    for (int i = 0; i < vars->keys->length; i++) {
+        char* key;
+        a_get(vars->keys, i, &key);
+        if (strcmp(key, v_name) == 0) return i;
+    }
+    return -1;
+}
 
+int register_arg(dict_t* vars, array_t* t_mem, array_t* mem, int index, int* heap_top) {
+    char* arg;
+    a_get(t_mem, index, &arg);
+
+    int addr_i = is_in_vars(vars, arg);
+    if (addr_i != -1) {
+        int addr;
+        a_get(vars, addr_i, &addr);
+
+        a_set(mem, index, &addr);
+    } else {
+        int val = 0;
+        sscanf(arg, "%d", &val);
+    }
+}
+
+int load_temp_memory(array_t* t_mem, dict_t* vars) {
+    int mem_size = 2;
+    int instr = 0;
+    int var_count = 0;
+
+    // Calculate memory size
     for (int i = 0; i < t_mem->length; i++) {
+        instr++;
         char* str_code;
         a_get(t_mem, i, &str_code);
         int code;
+        sscanf(str_code, "%d", &code);
         
+        // if performing operation with 3 args
+        if (code == 1 || code == 2 || code == 3) {
+            mem_size += 7;
+            var_count += 3;
+            i += 3;
+        // if performing operation with 2 args
+        } else if (code == 4 || code == 5) {
+            mem_size += 5;
+            var_count += 2;
+            i += 2;
+        // if performing operation with 1 args
+        } else if (code == 6 || code == 7 || code == 8) {
+            mem_size += 3;
+            var_count += 1;
+            i += 1;
+        }
     }
 
-    array_t* mem = InitZerosArray(sizeof(int), );
+    array_t* mem = InitZerosArray(sizeof(int), mem_size);
+    int var_threshold = mem_size - var_count - 1;
+    int const_treshold = var_threshold;
+
+    // Build var memory
+    for (int i = 0; i < vars->size; i++) {
+        char* key;
+        int value;
+        a_get(vars->keys, i, &key);
+        a_get(vars->values, i, &value);
+
+        int m_i = var_threshold + i;
+        a_set(mem, m_i, &value);
+        a_set(vars->values, i, &m_i);
+        const_treshold++;
+    }
+
+    for (int i = 0; i < vars->size; i++) {
+        char* strcode;
+        int code;
+        a_get(t_mem, i, &strcode);
+        
+        sscanf(strcode, "%d", &code);
+
+        a_set(mem, i, &code);
+
+        // if performing operation with 3 args
+        if (code == 1 || code == 2 || code == 3) {
+            char* arg1;
+            char* arg2;
+            char* arg3;
+
+            a_get(t_mem, i + 1, &arg1);
+            a_get(t_mem, i + 1, &arg2);
+            a_get(t_mem, i + 1, &arg3);
+
+            // if is a variable
+            if (is_in_vars())
+
+            i += 3;
+        // if performing operation with 2 args
+        } else if (code == 4 || code == 5) {
+            mem_size += 5;
+            var_count += 2;
+            i += 2;
+        // if performing operation with 1 args
+        } else if (code == 6 || code == 7 || code == 8) {
+            mem_size += 3;
+            var_count += 1;
+            i += 1;
+        }
+    }
 }
 
 array_t* load_program(const char* filepath) {
