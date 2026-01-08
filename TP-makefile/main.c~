@@ -1,0 +1,12 @@
+#include "module_1.h"
+#include "module_2.h"
+//laissez la ligne suivante commentée, cf plus loin dans le TP
+/* #include "module_3.h" */
+
+int main(){
+  module_1_function();
+  module_2_function();
+  //laissez la ligne suivante commentée, cf plus loin dans le TP
+  /* module_3_function(); */
+  return 0;
+}
