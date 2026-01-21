@@ -50,17 +50,12 @@ void print_list(int_list_t list) {
   print_list(list->tail);
 }
 
-int_list_t list_reverse(int_list_t reversed, int_list_t lst) {
-  if (lst == NULL) {
-    return empty_list();
-  }
-  return list_reverse(cons(reversed, list_head(lst)), list_tail(lst));
-}
-
 int_list_t list_concatenate(int_list_t left_lst, int_list_t right_lst) {
-  int_list_t out_lst = empty_lst();
-  
-  while (!is_empty(left_lst)) {
-    cons()
+  if (!is_empty(left_lst)) {
+    return cons(list_concatenate(left_lst->tail, right_lst), left_lst->head);
+  } else if (!is_empty(right_lst)) {
+    return cons(list_concatenate(left_lst, right_lst->tail), right_lst->head);
+  } else {
+    return empty_list();
   }
 }

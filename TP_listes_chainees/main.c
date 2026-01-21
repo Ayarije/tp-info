@@ -24,5 +24,5 @@ int main() {
   int_list_t lst3_and_lst5 = list_concatenate(lst3, lst5);
 
   printf("lst3 length = %d\nis 2 in lst3 = %d\nis 1 in lst3 = %d\n", lst3_length, is_2_in_lst3, is_1_in_lst3);
-  print_list(lst3_and_lst5);
+  printf("lst3_and_lst5 : "); print_list(lst3_and_lst5);
 }

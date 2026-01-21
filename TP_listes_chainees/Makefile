@@ -4,15 +4,17 @@ CC= gcc
 
 OBJ_DIR = ./obj/
 
-MAIN = main.c
+MAIN = applications.c
 EXEC = build.exe
 
-SRC_FILES := $(filter-out $(MAIN), $(wildcard *.c))
-OBJ_FILES := $(patsubst %.c, $(OBJ_DIR)%.o, $(SRC_FILES))
+INCLUDES ?= $(filter-out $(MAIN), $(wildcard *.c))
+include $(INCLUDES)
+
+OBJ_FILES := $(patsubst %.c, $(OBJ_DIR)%.o, $(INCLUDES))
 
 all: $(EXEC)
 
-$(OBJ_FILES): $(SRC_FILES)
+$(OBJ_FILES): $(INCLUDES)
 	$(CC) $(FLAGS) -c -o $(@) $(<)
 
 $(EXEC): $(MAIN) $(OBJ_FILES)
@@ -28,5 +30,5 @@ clean-all: clean
 	@echo Removed successfuly: $(EXEC)
 
 list:
-	@echo $(SRC_FILES)
+	@echo $(INCLUDES)
 	@echo $(OBJ_FILES)
