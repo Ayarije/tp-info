@@ -1,0 +1,6 @@
+#include "immutable_queue.h"
+
+queue_t queue_create_empty() {
+  queue_t queue = malloc(sizeof(struct cell_s));
+  queue->input = 
+}

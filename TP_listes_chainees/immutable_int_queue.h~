@@ -1,0 +1,13 @@
+#ifndef IMMUTABLE_INT_QUEUE_H
+#define IMMUTABLE_INT_QUEUE_H
+
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "mutable_int_list.h"
+
+struct queue_s {
+  
+}
+
+#endif

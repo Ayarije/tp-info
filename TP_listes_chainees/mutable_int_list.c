@@ -73,7 +73,15 @@ void print_int_list(int_list_t list){
   printf("]\n");
 }
 
-void free_int_list(int_list_t list){
+void free_int_list(int_list_t list) {
+  if (is_empty(list)) {
+    return;
+  }
   free_int_list(list->tail);
+  free(list);
   return;
+}
+
+int sum_list(int_list_t list) {
+  
 }
