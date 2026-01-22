@@ -23,6 +23,7 @@ int is_empty(int_list_t list);
 int list_length(int_list_t list);
 int is_in_list(int_list_t list, int e);
 void print_list(int_list_t list);
+int_list_t list_rev(int_list_t list);
 int_list_t list_concatenate(int_list_t lst1, int_list_t lst2);
 
 #endif

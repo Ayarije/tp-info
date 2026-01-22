@@ -83,5 +83,6 @@ void free_int_list(int_list_t list) {
 }
 
 int sum_list(int_list_t list) {
-  
+  if (is_empty(list)) return 0;
+  list_head(list) + sum_list(list_tail(list));
 }

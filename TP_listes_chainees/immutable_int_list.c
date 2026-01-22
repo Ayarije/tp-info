@@ -59,3 +59,12 @@ int_list_t list_concatenate(int_list_t left_lst, int_list_t right_lst) {
     return empty_list();
   }
 }
+
+int_list_t _list_rev(int_list_t list, int_list_t reversed_list) {
+  if (is_empty(list)) return reversed_list;
+  return _list_rev(list_tail(list), cons(reversed_list, list_head(list)));
+}
+
+int_list_t list_rev(int_list_t list) {
+  return _list_rev(list, empty_list());
+}
