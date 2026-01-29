@@ -1,0 +1,6 @@
+type ('a, 'b) hash_table = {data: ('a * 'b) list array; hash_function: 'a -> int};;
+
+let init_hash_table n hash_f = {
+    data = Array.make n [(0, 0)];
+    hash_function = hash_f
+  };;
