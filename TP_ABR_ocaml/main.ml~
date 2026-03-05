@@ -1,0 +1,65 @@
+type ('a, 'b) dict = Empty | Node of ('a * 'b) * ('a, 'b) dict * ('a, 'b) dict;;
+
+let rec infix_traversal d f =
+  match d with
+  | Empty -> ()
+  | Node(data, child1, child2) ->
+     let k, v = data in
+     infix_traversal child1 f;
+     f k v;
+     infix_traversal child2 f;;
+
+
+
+let rec get_value d key =
+  match d with
+  | Empty -> failwith "Can't find the key"
+  | Node(data, left, right) ->
+     let k, v = data in
+     if k = key then
+       v
+     else if key < k then
+       get_value right key
+     else
+       get_value left key;;
+
+let a = get_value d "texte";;
+
+let make_dict () = Empty;;
+
+let rec insert d key value =
+  match d with
+  | Empty -> Node((key, value), Empty, Empty)
+  | Node(data, left, right) ->
+     let k, v = data in
+     if k = key then
+       failwith "Key already exists"
+     else if key < k then
+       Node(data, insert left key value, right)
+     else
+       Node(data, left, insert right key value);;
+
+let d = Empty;;
+let d = insert d "mot" 5;;
+let d = insert d "lettre" 12;;
+let d = insert d "phrase" 7;;
+let d = insert d "texte" 1;;
+infix_traversal d (fun k -> (fun v -> (Printf.printf "%s: %d\n" k v)));;
+
+let new_d = insert d "caca" 6;;
+infix_traversal new_d (fun k -> (fun v -> (Printf.printf "%s: %d\n" k v)));;
+
+let rec remove d key =
+  match d with
+  | Empty -> failwith "Key is not in the dict"
+  | Node(data, Empty, right) -> (data, right)
+  | Node(data, left, right) ->
+     let k, v = data in
+     let prev_data, new_left = remove left key in
+     if k = key then
+       (data, Node(prev_data, new_left, right))
+     else if key < k then
+       (data, Node(new_left, right))
+     else
+       (data, Node(new_left, right))
+           
